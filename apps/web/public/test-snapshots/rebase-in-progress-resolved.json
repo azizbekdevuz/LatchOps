@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "timestamp": "2024-12-21T12:00:00.000Z",
+  "platform": "win32",
+  "repoRoot": "C:/Projects/api-server",
+  "gitDir": "C:/Projects/api-server/.git",
+  "branch": {
+    "head": "feature/api-v2",
+    "oid": "z9a8b7c6d5e4f3g",
+    "upstream": "origin/feature/api-v2",
+    "aheadBehind": { "ahead": 4, "behind": 0 }
+  },
+  "isDetachedHead": false,
+  "rebaseState": {
+    "inProgress": false,
+    "type": "none"
+  },
+  "unmergedFiles": [],
+  "stagedFiles": [],
+  "modifiedFiles": [],
+  "untrackedFiles": [],
+  "recentLog": [
+    { "hash": "z9a8b7c", "refs": ["HEAD", "feature/api-v2"], "message": "Add validation middleware" },
+    { "hash": "h6i5j4k", "refs": [], "message": "Update error handling" },
+    { "hash": "l3m2n1o", "refs": [], "message": "Refactor API v2 endpoints" },
+    { "hash": "m4n5o6p", "refs": ["origin/main", "main"], "message": "Update Express to v5" },
+    { "hash": "q7r8s9t", "refs": [], "message": "Add rate limiting" },
+    { "hash": "u0v1w2x", "refs": [], "message": "Implement caching layer" }
+  ],
+  "recentReflog": [
+    { "hash": "z9a8b7c", "selector": "HEAD@{0}", "action": "rebase", "message": "rebase (finish): returning to refs/heads/feature/api-v2" },
+    { "hash": "h6i5j4k", "selector": "HEAD@{1}", "action": "rebase", "message": "rebase (continue): Update error handling" },
+    { "hash": "l3m2n1o", "selector": "HEAD@{2}", "action": "rebase", "message": "rebase (continue): Refactor API v2 endpoints" },
+    { "hash": "x1y2z3w", "selector": "HEAD@{3}", "action": "rebase", "message": "rebase (continue): Add validation middleware" },
+    { "hash": "m4n5o6p", "selector": "HEAD@{4}", "action": "rebase", "message": "rebase (start): checkout main" },
+    { "hash": "y3z4a5b", "selector": "HEAD@{5}", "action": "checkout", "message": "checkout: moving from main to feature/api-v2" }
+  ],
+  "commitGraph": "* z9a8b7c (HEAD -> feature/api-v2) Add validation middleware\n* h6i5j4k Update error handling\n* l3m2n1o Refactor API v2 endpoints\n* m4n5o6p (origin/main, main) Update Express to v5\n* q7r8s9t Add rate limiting\n* u0v1w2x Implement caching layer",
+  "rawStatus": "",
+  "rawBranches": "* feature/api-v2 z9a8b7c Add validation middleware\n  main m4n5o6p Update Express to v5"
+}
+

@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "timestamp": "2024-12-21T11:00:00.000Z",
+  "platform": "linux",
+  "repoRoot": "/home/dev/webapp",
+  "gitDir": "/home/dev/webapp/.git",
+  "branch": {
+    "head": "(detached)",
+    "oid": "a1b2c3d4e5f6789",
+    "aheadBehind": { "ahead": 0, "behind": 0 }
+  },
+  "isDetachedHead": true,
+  "rebaseState": {
+    "inProgress": false,
+    "type": "none"
+  },
+  "unmergedFiles": [],
+  "stagedFiles": ["src/components/Button.tsx", "src/styles/theme.css"],
+  "modifiedFiles": ["src/App.tsx", "package.json"],
+  "untrackedFiles": ["temp-debug.log"],
+  "recentLog": [
+    { "hash": "a1b2c3d", "refs": ["HEAD"], "message": "Fix button hover state" },
+    { "hash": "e5f6789", "refs": ["tag: v2.0.0"], "message": "Release v2.0.0" },
+    { "hash": "b3c4d5e", "refs": [], "message": "Update dependencies" },
+    { "hash": "f6g7h8i", "refs": ["origin/main", "main"], "message": "Add dark mode support" },
+    { "hash": "j9k0l1m", "refs": [], "message": "Refactor component structure" },
+    { "hash": "n2o3p4q", "refs": ["origin/develop"], "message": "WIP: New feature" }
+  ],
+  "recentReflog": [
+    { "hash": "a1b2c3d", "selector": "HEAD@{0}", "action": "checkout", "message": "checkout: moving from main to a1b2c3d" },
+    { "hash": "f6g7h8i", "selector": "HEAD@{1}", "action": "commit", "message": "commit: Add dark mode support" },
+    { "hash": "j9k0l1m", "selector": "HEAD@{2}", "action": "commit", "message": "commit: Refactor component structure" },
+    { "hash": "n2o3p4q", "selector": "HEAD@{3}", "action": "checkout", "message": "checkout: moving from develop to main" }
+  ],
+  "commitGraph": "* a1b2c3d (HEAD) Fix button hover state\n* e5f6789 (tag: v2.0.0) Release v2.0.0\n* b3c4d5e Update dependencies\n* f6g7h8i (origin/main, main) Add dark mode support\n* j9k0l1m Refactor component structure",
+  "rawStatus": "M  src/components/Button.tsx\nM  src/styles/theme.css\n M src/App.tsx\n M package.json\n?? temp-debug.log",
+  "rawBranches": "* (HEAD detached at a1b2c3d)\n  main f6g7h8i Add dark mode support\n  develop n2o3p4q WIP: New feature"
+}

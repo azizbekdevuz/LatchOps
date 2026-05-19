@@ -1,0 +1,15 @@
+[Unit]
+Description=LatchOps Analysis Service
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/latchops/apps/agent
+Environment="PATH=/var/www/latchops/apps/agent/venv/bin"
+ExecStart=/var/www/latchops/apps/agent/venv/bin/python main.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

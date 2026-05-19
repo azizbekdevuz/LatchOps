@@ -1,0 +1,37 @@
+{
+  "name": "latchops",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r build",
+    "build:web": "pnpm --filter @latchops/web build",
+    "build:cli": "pnpm --filter @latchops/schema build && pnpm --filter @latchops/cli build",
+    "start": "pnpm start:web & pnpm start:cli",
+    "start:web": "pnpm --filter @latchops/web start",
+    "dev:web": "pnpm --filter @latchops/web dev",
+    "dev:cli": "pnpm --filter @latchops/cli dev",
+    "dev": "pnpm dev:web & pnpm dev:cli",
+    "typecheck": "pnpm -r typecheck",
+    "db:generate": "pnpm --filter @latchops/web db:generate",
+    "db:push": "pnpm --filter @latchops/web db:push",
+    "db:studio": "pnpm --filter @latchops/web db:studio",
+    "cli": "pnpm --filter @latchops/cli --"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "pnpm": {
+    "overrides": {
+      "next@>=10.0.0 <15.5.10": ">=15.5.10",
+      "next@>=15.5.1-canary.0 <15.5.10": ">=15.5.10",
+      "next@>=9.5.0 <15.5.13": ">=15.5.13",
+      "next@>=10.0.0 <15.5.14": ">=15.5.14",
+      "effect@<3.20.0": ">=3.20.0",
+      "picomatch@<2.3.2": ">=2.3.2",
+      "picomatch@>=4.0.0 <4.0.4": ">=4.0.4"
+    }
+  }
+}

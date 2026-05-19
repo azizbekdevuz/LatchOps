@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "timestamp": "2024-12-21T11:30:00.000Z",
+  "platform": "win32",
+  "repoRoot": "C:/Projects/api-server",
+  "gitDir": "C:/Projects/api-server/.git",
+  "branch": {
+    "head": "(no branch, rebasing feature/api-v2)",
+    "oid": "x1y2z3w4v5u6789",
+    "upstream": "origin/feature/api-v2",
+    "aheadBehind": { "ahead": 3, "behind": 5 }
+  },
+  "isDetachedHead": true,
+  "rebaseState": {
+    "inProgress": true,
+    "type": "merge",
+    "headName": "feature/api-v2",
+    "onto": "main",
+    "currentStep": 2,
+    "totalSteps": 4
+  },
+  "unmergedFiles": [
+    {
+      "path": "src/routes/users.ts",
+      "stageOurs": "100644",
+      "stageTheirs": "100644",
+      "conflictBlocks": [
+        {
+          "startLine": 22,
+          "endLine": 35,
+          "oursContent": "router.get('/users/:id', async (req, res) => {\n  const user = await UserService.getById(req.params.id);\n  if (!user) return res.status(404).json({ error: 'Not found' });\n  res.json(user);\n});",
+          "theirsContent": "router.get('/users/:id', validateParams(userIdSchema), async (req, res) => {\n  const user = await userRepository.findById(req.validatedParams.id);\n  if (!user) throw new NotFoundError('User not found');\n  res.json(userSerializer.serialize(user));\n});",
+          "context": "import { Router } from 'express';\nimport { UserService } from '../services/user';\n\nconst router = Router();"
+        }
+      ]
+    }
+  ],
+  "stagedFiles": ["src/middleware/validation.ts"],
+  "modifiedFiles": [],
+  "untrackedFiles": [],
+  "recentLog": [
+    { "hash": "x1y2z3w", "refs": ["HEAD"], "message": "Apply commit 2/4: Add validation middleware" },
+    { "hash": "m4n5o6p", "refs": ["origin/main", "main"], "message": "Update Express to v5" },
+    { "hash": "q7r8s9t", "refs": [], "message": "Add rate limiting" },
+    { "hash": "u0v1w2x", "refs": [], "message": "Implement caching layer" },
+    { "hash": "y3z4a5b", "refs": ["origin/feature/api-v2"], "message": "Refactor API v2 endpoints" }
+  ],
+  "recentReflog": [
+    { "hash": "x1y2z3w", "selector": "HEAD@{0}", "action": "rebase", "message": "rebase (continue): Add validation middleware" },
+    { "hash": "c6d7e8f", "selector": "HEAD@{1}", "action": "rebase", "message": "rebase (pick): Update error handling" },
+    { "hash": "m4n5o6p", "selector": "HEAD@{2}", "action": "rebase", "message": "rebase (start): checkout main" },
+    { "hash": "y3z4a5b", "selector": "HEAD@{3}", "action": "checkout", "message": "checkout: moving from main to feature/api-v2" }
+  ],
+  "commitGraph": "* x1y2z3w (HEAD) Apply commit 2/4: Add validation middleware\n* m4n5o6p (origin/main, main) Update Express to v5\n* q7r8s9t Add rate limiting\n|\n| * y3z4a5b (origin/feature/api-v2) Refactor API v2 endpoints\n|/\n* u0v1w2x Implement caching layer",
+  "rawStatus": "UU src/routes/users.ts\nM  src/middleware/validation.ts",
+  "rawBranches": "* (no branch, rebasing feature/api-v2)\n  main m4n5o6p Update Express to v5\n  feature/api-v2 y3z4a5b Refactor API v2 endpoints"
+}

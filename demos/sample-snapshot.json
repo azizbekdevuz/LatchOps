@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "platform": "win32",
+  "repoRoot": "C:/Users/dev/projects/my-app",
+  "gitDir": ".git",
+  "branch": {
+    "head": "main",
+    "oid": "abc1234def5678",
+    "upstream": "origin/main",
+    "aheadBehind": {
+      "ahead": 0,
+      "behind": 0
+    }
+  },
+  "isDetachedHead": false,
+  "rebaseState": {
+    "inProgress": false,
+    "type": "none"
+  },
+  "unmergedFiles": [
+    {
+      "path": "src/app.ts",
+      "conflictBlocks": [
+        {
+          "startLine": 15,
+          "endLine": 25,
+          "oursContent": "function handleClick() {\n  console.log('main branch version');\n  doSomething();\n}",
+          "theirsContent": "function handleClick() {\n  console.log('feature branch version');\n  doSomethingElse();\n}",
+          "context": "import { useState } from 'react';\n\n// Component logic\n<<<<<<< HEAD\nfunction handleClick() {\n  console.log('main branch version');\n  doSomething();\n}\n=======\nfunction handleClick() {\n  console.log('feature branch version');\n  doSomethingElse();\n}\n>>>>>>> feature-branch\n\nexport default App;"
+        }
+      ]
+    }
+  ],
+  "stagedFiles": [],
+  "modifiedFiles": [],
+  "untrackedFiles": [],
+  "recentLog": [
+    {
+      "hash": "abc1234",
+      "refs": ["HEAD", "main"],
+      "message": "Merge branch 'feature-branch'"
+    },
+    {
+      "hash": "def5678",
+      "refs": [],
+      "message": "Update main with latest changes"
+    },
+    {
+      "hash": "ghi9012",
+      "refs": ["origin/main"],
+      "message": "Initial commit"
+    }
+  ],
+  "recentReflog": [
+    {
+      "hash": "abc1234",
+      "selector": "HEAD@{0}",
+      "action": "merge",
+      "message": "merge feature-branch: Merge made"
+    },
+    {
+      "hash": "def5678",
+      "selector": "HEAD@{1}",
+      "action": "commit",
+      "message": "Update main with latest changes"
+    },
+    {
+      "hash": "ghi9012",
+      "selector": "HEAD@{2}",
+      "action": "checkout",
+      "message": "moving from feature-branch to main"
+    }
+  ],
+  "rawStatus": "# branch.oid abc1234def5678\n# branch.head main\n# branch.upstream origin/main\n# branch.ab +0 -0\nu UU N... 100644 100644 100644 abc123 def456 ghi789 src/app.ts",
+  "rawBranches": "* main abc1234 [origin/main] Latest commit\n  feature-branch xyz789 Feature work"
+}

@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "timestamp": "2024-12-21T11:15:00.000Z",
+  "platform": "linux",
+  "repoRoot": "/home/dev/webapp",
+  "gitDir": "/home/dev/webapp/.git",
+  "branch": {
+    "head": "main",
+    "oid": "f6g7h8i9j0k1l2m",
+    "upstream": "origin/main",
+    "aheadBehind": { "ahead": 1, "behind": 0 }
+  },
+  "isDetachedHead": false,
+  "rebaseState": {
+    "inProgress": false,
+    "type": "none"
+  },
+  "unmergedFiles": [],
+  "stagedFiles": ["src/components/Button.tsx", "src/styles/theme.css"],
+  "modifiedFiles": ["src/App.tsx", "package.json"],
+  "untrackedFiles": ["temp-debug.log"],
+  "recentLog": [
+    { "hash": "f6g7h8i", "refs": ["HEAD", "main"], "message": "Fix button hover state" },
+    { "hash": "e5f6789", "refs": ["tag: v2.0.0"], "message": "Release v2.0.0" },
+    { "hash": "b3c4d5e", "refs": [], "message": "Update dependencies" },
+    { "hash": "j9k0l1m", "refs": ["origin/main"], "message": "Refactor component structure" },
+    { "hash": "n2o3p4q", "refs": ["origin/develop"], "message": "WIP: New feature" }
+  ],
+  "recentReflog": [
+    { "hash": "f6g7h8i", "selector": "HEAD@{0}", "action": "checkout", "message": "checkout: moving from a1b2c3d to main" },
+    { "hash": "a1b2c3d", "selector": "HEAD@{1}", "action": "commit", "message": "commit: Fix button hover state" },
+    { "hash": "f6g7h8i", "selector": "HEAD@{2}", "action": "checkout", "message": "checkout: moving from main to a1b2c3d" },
+    { "hash": "j9k0l1m", "selector": "HEAD@{3}", "action": "commit", "message": "commit: Add dark mode support" }
+  ],
+  "commitGraph": "* f6g7h8i (HEAD -> main) Fix button hover state\n* e5f6789 (tag: v2.0.0) Release v2.0.0\n* b3c4d5e Update dependencies\n* j9k0l1m (origin/main) Refactor component structure",
+  "rawStatus": "M  src/components/Button.tsx\nM  src/styles/theme.css\n M src/App.tsx\n M package.json\n?? temp-debug.log",
+  "rawBranches": "* main f6g7h8i Fix button hover state\n  develop n2o3p4q WIP: New feature"
+}
+

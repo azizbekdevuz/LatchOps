@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "timestamp": "2024-12-21T10:30:00.000Z",
+  "platform": "darwin",
+  "repoRoot": "/Users/dev/my-project",
+  "gitDir": "/Users/dev/my-project/.git",
+  "branch": {
+    "head": "feature/user-auth",
+    "oid": "abc123def456789",
+    "upstream": "origin/feature/user-auth",
+    "aheadBehind": { "ahead": 2, "behind": 0 }
+  },
+  "isDetachedHead": false,
+  "rebaseState": {
+    "inProgress": false,
+    "type": "none"
+  },
+  "unmergedFiles": [
+    {
+      "path": "src/auth/login.ts",
+      "stageOurs": "100644",
+      "stageTheirs": "100644",
+      "conflictBlocks": [
+        {
+          "startLine": 15,
+          "endLine": 28,
+          "oursContent": "export async function login(email: string, password: string) {\n  const user = await db.users.findByEmail(email);\n  if (!user) throw new AuthError('User not found');\n  const valid = await bcrypt.compare(password, user.password);\n  if (!valid) throw new AuthError('Invalid password');\n  return createSession(user);\n}",
+          "theirsContent": "export async function login(credentials: LoginCredentials) {\n  const { email, password } = credentials;\n  const user = await userRepository.findByEmail(email);\n  if (!user) throw new UnauthorizedError('Invalid credentials');\n  const isValid = await verifyPassword(password, user.passwordHash);\n  if (!isValid) throw new UnauthorizedError('Invalid credentials');\n  return sessionService.create(user.id);\n}",
+          "context": "import { db } from '../database';\nimport { createSession } from './session';\n\n// Authentication logic"
+        }
+      ]
+    },
+    {
+      "path": "src/config/database.ts",
+      "stageOurs": "100644",
+      "stageTheirs": "100644",
+      "conflictBlocks": [
+        {
+          "startLine": 5,
+          "endLine": 12,
+          "oursContent": "export const dbConfig = {\n  host: 'localhost',\n  port: 5432,\n  database: 'myapp_dev'\n};",
+          "theirsContent": "export const dbConfig = {\n  host: process.env.DB_HOST || 'localhost',\n  port: parseInt(process.env.DB_PORT || '5432'),\n  database: process.env.DB_NAME || 'myapp'\n};",
+          "context": "// Database configuration\n\nimport { PoolConfig } from 'pg';"
+        }
+      ]
+    }
+  ],
+  "stagedFiles": ["src/utils/helpers.ts"],
+  "modifiedFiles": ["README.md"],
+  "untrackedFiles": ["notes.txt"],
+  "recentLog": [
+    { "hash": "abc123d", "refs": ["HEAD", "feature/user-auth"], "message": "Add user authentication" },
+    { "hash": "def456e", "refs": [], "message": "Update login form validation" },
+    { "hash": "789ghij", "refs": ["origin/main", "main"], "message": "Initial project setup" },
+    { "hash": "klm012n", "refs": [], "message": "Add database migrations" },
+    { "hash": "opq345r", "refs": [], "message": "Configure CI/CD pipeline" }
+  ],
+  "recentReflog": [
+    { "hash": "abc123d", "selector": "HEAD@{0}", "action": "merge", "message": "merge main: Merge made by recursive" },
+    { "hash": "def456e", "selector": "HEAD@{1}", "action": "commit", "message": "commit: Update login form validation" },
+    { "hash": "789ghij", "selector": "HEAD@{2}", "action": "checkout", "message": "checkout: moving from main to feature/user-auth" }
+  ],
+  "commitGraph": "* abc123d (HEAD -> feature/user-auth) Add user authentication\n* def456e Update login form validation\n| * 789ghij (origin/main, main) Update config\n|/\n* klm012n Initial setup",
+  "mergeHead": "789ghij",
+  "mergeMessage": "Merge branch 'main' into feature/user-auth",
+  "rawStatus": "UU src/auth/login.ts\nUU src/config/database.ts\nM  src/utils/helpers.ts\n M README.md\n?? notes.txt",
+  "rawBranches": "* feature/user-auth abc123d Add user authentication\n  main 789ghij Update config"
+}

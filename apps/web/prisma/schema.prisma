@@ -1,0 +1,281 @@
+// Prisma schema for LatchOps - Git Incident Room
+// Using Neon Postgres as the database
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// NextAuth.js Tables (Standard Schema)
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String? // For credentials provider
+
+  accounts           Account[]
+  sessions           Session[]
+  gitSessions        GitSession[]
+  authenticationLogs AuthenticationLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Authentication audit logging
+model AuthenticationLog {
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action        String   // LOGIN, REGISTER, LOGOUT, LOGIN_FAILED, TOKEN_REFRESH
+  ipAddress     String?
+  userAgent     String?  @db.Text
+  success       Boolean
+  failureReason String?
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// LatchOps Application Tables - Git Incident Room
+// ============================================
+
+// Main session for a git incident
+model GitSession {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  title        String?
+  os           String?
+  repoRootHash String?
+  status       String  @default("pending") // pending, analyzing, ready, error
+
+  // Owner (nullable for anonymous/public uploads)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Relations
+  snapshots Snapshot[]
+  analyses  Analysis[]
+  traces    Trace[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
+}
+
+// Raw snapshot from CLI
+model Snapshot {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  gitSessionId String
+  gitSession   GitSession @relation(fields: [gitSessionId], references: [id], onDelete: Cascade)
+
+  // Snapshot data stored as JSONB
+  snapshotJson Json
+  truncated    Boolean @default(false)
+
+  // Analysis created from this snapshot
+  analysis Analysis?
+
+  // Traces that reference this snapshot
+  traces Trace[]
+
+  @@index([gitSessionId])
+  @@index([createdAt])
+}
+
+// Analysis result from analysis service
+model Analysis {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  gitSessionId String
+  gitSession   GitSession @relation(fields: [gitSessionId], references: [id], onDelete: Cascade)
+
+  // Link to source snapshot
+  snapshotId String   @unique
+  snapshot   Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  // Issue classification
+  issueType String // merge_conflict, detached_head, rebase_in_progress, clean, unknown
+  summary   String? @db.Text
+
+  // Repo graph for visualization (nodes/edges)
+  repoGraphJson Json?
+
+  // Relations
+  conflictFiles ConflictFile[]
+  planSteps     PlanStep[]
+
+  @@index([gitSessionId])
+  @@index([issueType])
+}
+
+// Conflict file in a merge conflict
+model ConflictFile {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  analysisId String
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  path             String
+  highLevelSummary String? @db.Text
+
+  // Hunks within this file
+  hunks ConflictHunk[]
+
+  @@index([analysisId])
+}
+
+// Individual conflict hunk within a file
+model ConflictHunk {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  conflictFileId String
+  conflictFile   ConflictFile @relation(fields: [conflictFileId], references: [id], onDelete: Cascade)
+
+  index     Int // Order within the file
+  startLine Int?
+  endLine   Int?
+
+  // Three-way content
+  baseText   String @db.Text
+  oursText   String @db.Text
+  theirsText String @db.Text
+
+  // AI analysis
+  explanation      String? @db.Text
+  suggestedChoice  String? // ours, theirs, manual, combine
+  suggestedContent String? @db.Text
+
+  // User's choice (for tracking resolution)
+  userChoice  String? // ours, theirs, manual
+  userContent String? @db.Text
+
+  @@index([conflictFileId])
+}
+
+// Step in the recovery plan
+model PlanStep {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  analysisId String
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  index       Int
+  title       String
+  rationale   String?  @db.Text
+  dangerLevel String   @default("safe") // safe, caution, dangerous
+
+  // Commands as JSON arrays
+  commandsJson Json // string[]
+  verifyJson   Json // string[] - commands to verify success
+  undoJson     Json // string[] - commands to undo
+
+  // Execution tracking
+  status       String  @default("pending") // pending, completed, skipped
+  completedAt  DateTime?
+  userConfirmed Boolean @default(false) // For dangerous steps
+
+  @@index([analysisId])
+  @@index([index])
+}
+
+// Trace for recovery pipeline debugging
+model Trace {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  gitSessionId String
+  gitSession   GitSession @relation(fields: [gitSessionId], references: [id], onDelete: Cascade)
+
+  // recovery engine stage identifier
+  stage String // ingest, analyze, explain, plan, verify
+
+  // Reference to input snapshot (optional)
+  snapshotId String?
+  snapshot   Snapshot? @relation(fields: [snapshotId], references: [id], onDelete: SetNull)
+
+  // Input/Output data stored as JSONB
+  inputJson  Json?
+  outputJson Json?
+
+  // Execution metadata
+  durationMs   Int?
+  success      Boolean @default(true)
+  errorMessage String? @db.Text
+
+  @@index([gitSessionId])
+  @@index([stage])
+  @@index([createdAt])
+}
+
+// Event log for audit/analytics
+model Event {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  type         String // session_created, analysis_completed, step_executed, etc.
+  userId       String?
+  gitSessionId String?
+
+  metadata Json?
+
+  @@index([type])
+  @@index([userId])
+  @@index([createdAt])
+}
