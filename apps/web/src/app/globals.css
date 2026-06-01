@@ -2,62 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   LatchOps design tokens — "control-room ink"
+   Single source of truth; tailwind.config.js mirrors these.
+   ============================================================ */
 :root {
-  --bg-primary: #0d1117;
-  --bg-secondary: #161b22;
-  --bg-tertiary: #21262d;
-  --border-color: #30363d;
-  --text-primary: #c9d1d9;
-  --text-secondary: #8b949e;
-  --text-muted: #6e7681;
-  --accent-blue: #58a6ff;
-  --accent-green: #3fb950;
-  --accent-red: #f85149;
-  --accent-yellow: #d29922;
-  --accent-purple: #a371f7;
-}
+  /* Surfaces */
+  --bg-primary: #06080b;
+  --bg-secondary: #0b0f14;
+  --bg-tertiary: #131a21;
+  --border-color: #1d2630;
+  --border-strong: #2b3845;
 
-/* Custom gradient utilities */
-.bg-gradient-radial {
-  background: radial-gradient(circle, var(--tw-gradient-stops));
-}
+  /* Type */
+  --text-primary: #e9eef3;
+  --text-secondary: #93a1ae;
+  --text-muted: #5b6873;
 
-/* Glass morphism */
-.glass {
-  background: rgba(22, 27, 34, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(48, 54, 61, 0.5);
-}
+  /* Signals — one signature mint, supporting tones desaturated */
+  --accent-green: #34e0a1;
+  --accent-blue: #62b6cb;
+  --accent-red: #ff5d55;
+  --accent-yellow: #e3a13c;
+  --accent-purple: #9a8cff;
 
-/* Glow effects */
-.glow-blue {
-  box-shadow: 0 0 20px rgba(88, 166, 255, 0.3);
-}
+  /* Atmosphere */
+  --glow-mint: 52 224 161;
+  --ink-line: rgba(98, 182, 203, 0.07);
 
-.glow-green {
-  box-shadow: 0 0 20px rgba(63, 185, 80, 0.3);
-}
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --dur-fast: 160ms;
+  --dur-med: 320ms;
+  --dur-slow: 700ms;
 
-.glow-purple {
-  box-shadow: 0 0 20px rgba(163, 113, 247, 0.3);
-}
-
-/* Animated gradient border */
-@keyframes gradient-rotate {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.gradient-border {
-  background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple), var(--accent-green), var(--accent-blue));
-  background-size: 300% 300%;
-  animation: gradient-rotate 4s ease infinite;
-}
-
-/* Smooth transitions */
-.transition-smooth {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Type scale */
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: var(--font-grotesk), var(--font-sans);
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 * {
@@ -66,13 +49,29 @@
   margin: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
   background: var(--bg-primary);
   color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(var(--glow-mint), 0.25);
+  color: var(--text-primary);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
 }
 
 a {
@@ -90,19 +89,28 @@ button {
 }
 
 code, pre {
-  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.875rem;
 }
 
 pre {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 1rem;
   overflow-x: auto;
 }
 
-/* Utility classes */
+/* Accessible focus — visible, on-brand, keyboard only */
+:focus-visible {
+  outline: 2px solid var(--accent-green);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   Primitives
+   ============================================================ */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -112,7 +120,7 @@ pre {
 .card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 12px;
   padding: 1.5rem;
 }
 
@@ -121,28 +129,39 @@ pre {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  padding: 0.55rem 1.1rem;
+  border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
   border: 1px solid var(--border-color);
   background: var(--bg-tertiary);
   color: var(--text-primary);
-  transition: background-color 0.15s ease;
+  transition: transform var(--dur-fast) var(--ease-out-soft),
+              background-color var(--dur-fast) ease,
+              border-color var(--dur-fast) ease,
+              box-shadow var(--dur-med) ease;
 }
 
 .btn:hover {
   background: var(--bg-secondary);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .btn-primary {
   background: var(--accent-green);
   border-color: var(--accent-green);
-  color: white;
+  color: #04140d;
+  font-weight: 600;
 }
 
 .btn-primary:hover {
-  background: #2ea043;
+  background: #4dedb2;
+  box-shadow: 0 6px 24px -6px rgba(var(--glow-mint), 0.45);
 }
 
 .btn-danger {
@@ -152,7 +171,7 @@ pre {
 }
 
 .btn-danger:hover {
-  background: #da3633;
+  background: #e5483f;
 }
 
 .badge {
@@ -163,27 +182,186 @@ pre {
   font-weight: 500;
 }
 
-.badge-green {
-  background: rgba(63, 185, 80, 0.2);
+.badge-green  { background: rgba(52, 224, 161, 0.14); color: var(--accent-green); }
+.badge-yellow { background: rgba(227, 161, 60, 0.16); color: var(--accent-yellow); }
+.badge-red    { background: rgba(255, 93, 85, 0.16);  color: var(--accent-red); }
+.badge-blue   { background: rgba(98, 182, 203, 0.16); color: var(--accent-blue); }
+.badge-purple { background: rgba(154, 140, 255, 0.16); color: var(--accent-purple); }
+
+/* ============================================================
+   Atmosphere — ambient, never interactive-blocking
+   ============================================================ */
+
+/* Fine blueprint grid, fades toward edges */
+.bg-grid {
+  background-image:
+    linear-gradient(var(--ink-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ink-line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 100%);
+}
+
+/* Slow aurora drift behind heroes */
+.aurora {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 32% at 22% 18%, rgba(var(--glow-mint), 0.10), transparent 70%),
+    radial-gradient(30% 28% at 78% 12%, rgba(98, 182, 203, 0.08), transparent 70%),
+    radial-gradient(42% 36% at 60% 90%, rgba(154, 140, 255, 0.05), transparent 70%);
+  animation: aurora-drift 26s var(--ease-out-soft) infinite alternate;
+  will-change: transform;
+}
+
+@keyframes aurora-drift {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); }
+  to   { transform: translate3d(2%, 2%, 0) scale(1.06); }
+}
+
+/* Scanline divider used between sections */
+.hairline {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+}
+
+/* ============================================================
+   Motion system
+   ============================================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity var(--dur-slow) var(--ease-out-soft),
+              transform var(--dur-slow) var(--ease-out-soft);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-14px); }
+}
+
+.animate-float {
+  animation: float-soft 7s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+.pulse-dot {
+  animation: pulse-dot 2.2s ease-in-out infinite;
+}
+
+@keyframes caret-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.caret::after {
+  content: '▍';
   color: var(--accent-green);
+  animation: caret-blink 1.1s steps(1) infinite;
 }
 
-.badge-yellow {
-  background: rgba(210, 153, 34, 0.2);
-  color: var(--accent-yellow);
+/* Magnetic-feel lift for interactive cards */
+.lift {
+  transition: transform var(--dur-med) var(--ease-spring),
+              border-color var(--dur-fast) ease,
+              box-shadow var(--dur-med) ease;
 }
 
-.badge-red {
-  background: rgba(248, 81, 73, 0.2);
-  color: var(--accent-red);
+.lift:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-strong);
+  box-shadow: 0 14px 40px -18px rgba(0, 0, 0, 0.7);
 }
 
-.badge-blue {
-  background: rgba(88, 166, 255, 0.2);
-  color: var(--accent-blue);
+/* Underline sweep for nav links */
+.nav-link {
+  position: relative;
 }
 
-.badge-purple {
-  background: rgba(163, 113, 247, 0.2);
-  color: var(--accent-purple);
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1.5px;
+  background: var(--accent-green);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-med) var(--ease-out-soft);
+}
+
+.nav-link:hover::after,
+.nav-link[data-active='true']::after {
+  transform: scaleX(1);
+}
+
+/* Legacy helpers kept for tool pages */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}
+
+.glass {
+  background: rgba(11, 15, 20, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(29, 38, 48, 0.6);
+}
+
+.glow-blue   { box-shadow: 0 0 20px rgba(98, 182, 203, 0.25); }
+.glow-green  { box-shadow: 0 0 20px rgba(52, 224, 161, 0.25); }
+.glow-purple { box-shadow: 0 0 20px rgba(154, 140, 255, 0.25); }
+
+@keyframes gradient-rotate {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-border {
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple), var(--accent-green), var(--accent-blue));
+  background-size: 300% 300%;
+  animation: gradient-rotate 6s ease infinite;
+}
+
+.transition-smooth {
+  transition: all 0.3s var(--ease-out-soft);
+}
+
+/* ============================================================
+   Reduced motion — kill all decorative animation
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .aurora,
+  .animate-float,
+  .pulse-dot,
+  .gradient-border,
+  .caret::after {
+    animation: none !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .lift,
+  .btn,
+  .nav-link::after {
+    transition: none;
+  }
 }

@@ -9,14 +9,12 @@ import {
   GitBranch,
   RotateCcw,
   Shield,
-  Zap,
   CheckCircle2,
   AlertCircle,
   FileJson,
   Cpu,
   Activity,
   GitMerge,
-  GitPullRequest,
   Sparkles,
   ArrowRight,
   Copy,
@@ -181,17 +179,17 @@ export default function DashboardPage() {
   const getStageInfo = () => {
     switch (stage) {
       case 'uploading':
-        return { label: 'Uploading snapshot...', icon: Upload };
+        return { label: 'Uploading snapshot…', icon: Upload };
       case 'parsing':
-        return { label: 'Parsing git state...', icon: FileJson };
+        return { label: 'Parsing git state…', icon: FileJson };
       case 'analyzing':
-        return { label: 'Analyzing conflicts...', icon: Cpu };
+        return { label: 'Analyzing repository signals…', icon: Cpu };
       case 'generating':
-        return { label: 'Generating recovery plan...', icon: Sparkles };
+        return { label: 'Building recovery tree…', icon: Sparkles };
       case 'complete':
-        return { label: 'Analysis complete!', icon: CheckCircle2 };
+        return { label: 'Diagnosis complete', icon: CheckCircle2 };
       case 'error':
-        return { label: 'Analysis failed', icon: AlertCircle };
+        return { label: 'Diagnosis failed', icon: AlertCircle };
       default:
         return { label: 'Ready to analyze', icon: Activity };
     }
@@ -201,69 +199,66 @@ export default function DashboardPage() {
   const isProcessing = ['uploading', 'parsing', 'analyzing', 'generating'].includes(stage);
 
   return (
-    <main className="min-h-screen bg-bg-primary relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-radial from-accent-blue/5 via-transparent to-transparent animate-pulse" style={{ animationDuration: '4s' }} />
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-radial from-accent-purple/5 via-transparent to-transparent animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-accent-green/3 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-accent-blue/3 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+    <main className="min-h-screen bg-bg-primary relative">
+      <div className="absolute inset-x-0 top-0 h-[480px] overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="aurora" />
+        <div className="absolute inset-0 bg-grid" />
       </div>
 
       <Header />
 
       <div className="relative max-w-6xl mx-auto px-6 py-12">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-green/10 border border-accent-green/20 text-accent-green text-sm font-medium mb-6">
-            <Zap className="w-4 h-4" />
-            AI-Powered Git Recovery
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-text-primary via-accent-blue to-accent-purple bg-clip-text text-transparent">
-            Git Recovery Command Center
+        {/* Page heading */}
+        <div className="mb-12">
+          <p className="font-mono text-xs uppercase tracking-[0.25em] text-accent-green mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent-green pulse-dot" />
+            Incident intake
+          </p>
+          <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-text-primary">
+            Diagnose a repository state
           </h1>
-          <p className="text-text-secondary text-lg max-w-2xl mx-auto">
-            Upload your repository snapshot for intelligent conflict analysis,
-            step-by-step recovery plans, and safe resolution guidance.
+          <p className="mt-3 text-text-secondary text-lg max-w-2xl">
+            Send a snapshot for deterministic diagnosis, a recovery tree, and a safe rollback
+            path with explicit undo at every step.
           </p>
         </div>
 
         <div className="grid lg:grid-cols-5 gap-8">
           {/* Main Upload Panel */}
           <div className="lg:col-span-3">
-            <div className="relative bg-gradient-to-b from-bg-secondary to-bg-secondary/50 border border-border-color rounded-2xl overflow-hidden backdrop-blur-sm">
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-b from-accent-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
+            <div className="relative rounded-xl border border-border-color bg-bg-secondary/90 backdrop-blur overflow-hidden">
               <div className="p-8">
                 {/* CLI Command Section */}
                 <div className="mb-8">
                   <div className="flex items-center gap-2 mb-3">
-                    <Terminal className="w-5 h-5 text-accent-green" />
-                    <span className="text-sm font-medium text-text-secondary">Generate snapshot with CLI</span>
+                    <Terminal className="w-4 h-4 text-accent-green" />
+                    <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-text-muted">
+                      Capture from your repo
+                    </span>
                   </div>
-                  <div className="relative group">
-                    <div className="flex items-center gap-3 bg-bg-primary/80 border border-border-color rounded-xl p-4 font-mono text-sm">
-                      <span className="text-accent-purple">$</span>
-                      <code className="text-accent-green flex-1">latchops snapshot --pretty &gt; snapshot.json</code>
-                      <button
-                        onClick={copyCommand}
-                        className="p-2 rounded-lg bg-bg-tertiary hover:bg-border-color transition-colors"
-                      >
-                        {copied ? (
-                          <Check className="w-4 h-4 text-accent-green" />
-                        ) : (
-                          <Copy className="w-4 h-4 text-text-muted" />
-                        )}
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-3 bg-bg-primary border border-border-color rounded-lg p-4 font-mono text-sm">
+                    <span className="text-text-muted select-none">$</span>
+                    <code className="text-text-primary flex-1 !bg-transparent">
+                      latchops snapshot --pretty &gt; snapshot.json
+                    </code>
+                    <button
+                      onClick={copyCommand}
+                      aria-label="Copy command"
+                      className="p-2 rounded-md border border-border-color bg-bg-tertiary hover:border-border-strong transition-colors"
+                    >
+                      {copied ? (
+                        <Check className="w-4 h-4 text-accent-green" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-text-muted" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
                 {/* Upload Area */}
                 <form onSubmit={handleSubmit}>
                   <label
-                    className={`relative block cursor-pointer transition-all duration-300 ${dragActive ? 'scale-[1.02]' : ''}`}
+                    className={`relative block cursor-pointer transition-transform duration-300 ease-out-soft ${dragActive ? 'scale-[1.01]' : ''}`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
@@ -276,20 +271,20 @@ export default function DashboardPage() {
                       className="hidden"
                       disabled={isProcessing}
                     />
-                    <div className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${
+                    <div className={`relative border border-dashed rounded-xl p-12 text-center transition-colors duration-300 ${
                       dragActive
-                        ? 'border-accent-blue bg-accent-blue/5 shadow-lg shadow-accent-blue/10'
+                        ? 'border-accent-green bg-accent-green/5'
                         : file && stage !== 'error'
                         ? 'border-accent-green/50 bg-accent-green/5'
                         : stage === 'error'
                         ? 'border-accent-red/50 bg-accent-red/5'
-                        : 'border-border-color hover:border-accent-blue/50 hover:bg-bg-tertiary/30'
+                        : 'border-border-strong hover:border-accent-green/40 hover:bg-bg-tertiary/40'
                     }`}>
-                      {/* Processing Animation */}
+                      {/* Processing progress fill */}
                       {isProcessing && (
-                        <div className="absolute inset-0 overflow-hidden rounded-2xl">
+                        <div className="absolute inset-0 overflow-hidden rounded-xl" aria-hidden="true">
                           <div
-                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-accent-blue/20 via-accent-purple/20 to-accent-blue/20 transition-all duration-300"
+                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-accent-green/10 to-accent-blue/10 transition-all duration-300"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
@@ -299,25 +294,25 @@ export default function DashboardPage() {
                         {isProcessing ? (
                           <div className="flex flex-col items-center gap-4">
                             <div className="relative">
-                              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center animate-pulse">
-                                <stageInfo.icon className="w-8 h-8 text-white" />
+                              <div className="w-14 h-14 rounded-xl border border-accent-green/30 bg-accent-green/10 flex items-center justify-center">
+                                <stageInfo.icon className="w-7 h-7 text-accent-green" />
                               </div>
-                              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-bg-secondary rounded-full flex items-center justify-center border-2 border-accent-blue">
-                                <div className="w-3 h-3 border-2 border-accent-blue border-t-transparent rounded-full animate-spin" />
+                              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-bg-secondary rounded-full flex items-center justify-center border border-accent-green/50">
+                                <div className="w-2.5 h-2.5 border-2 border-accent-green border-t-transparent rounded-full animate-spin" />
                               </div>
                             </div>
                             <div>
-                              <p className="text-lg font-medium text-text-primary">{stageInfo.label}</p>
-                              <p className="text-sm text-text-muted mt-1">{Math.round(progress)}% complete</p>
+                              <p className="font-medium text-text-primary">{stageInfo.label}</p>
+                              <p className="font-mono text-xs text-text-muted mt-1">{Math.round(progress)}%</p>
                             </div>
                           </div>
                         ) : stage === 'complete' && result ? (
                           <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-green to-accent-blue flex items-center justify-center">
-                              <CheckCircle2 className="w-8 h-8 text-white" />
+                            <div className="w-14 h-14 rounded-xl border border-accent-green/40 bg-accent-green/10 flex items-center justify-center">
+                              <CheckCircle2 className="w-7 h-7 text-accent-green" />
                             </div>
                             <div>
-                              <p className="text-lg font-medium text-accent-green">Analysis Complete!</p>
+                              <p className="font-medium text-accent-green">Diagnosis complete</p>
                               <p className="text-sm text-text-muted mt-1">
                                 {result.conflictCount > 0
                                   ? `${result.conflictCount} conflict${result.conflictCount > 1 ? 's' : ''} detected`
@@ -325,46 +320,46 @@ export default function DashboardPage() {
                               </p>
                             </div>
                             <div className="flex items-center gap-2 text-sm text-accent-blue">
-                              <span>Redirecting to recovery room</span>
-                              <ArrowRight className="w-4 h-4 animate-pulse" />
+                              <span>Opening incident room</span>
+                              <ArrowRight className="w-4 h-4" />
                             </div>
                           </div>
                         ) : stage === 'error' ? (
                           <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-red to-accent-yellow flex items-center justify-center">
-                              <AlertCircle className="w-8 h-8 text-white" />
+                            <div className="w-14 h-14 rounded-xl border border-accent-red/40 bg-accent-red/10 flex items-center justify-center">
+                              <AlertCircle className="w-7 h-7 text-accent-red" />
                             </div>
                             <div>
-                              <p className="text-lg font-medium text-accent-red">Analysis Failed</p>
+                              <p className="font-medium text-accent-red">Diagnosis failed</p>
                               <p className="text-sm text-text-muted mt-1">{error}</p>
                             </div>
                             <button
                               type="button"
                               onClick={() => { setStage('idle'); setError(null); }}
-                              className="px-4 py-2 text-sm bg-bg-tertiary rounded-lg hover:bg-border-color transition-colors"
+                              className="btn text-sm"
                             >
-                              Try Again
+                              Try again
                             </button>
                           </div>
                         ) : file ? (
                           <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-green/20 to-accent-blue/20 border border-accent-green/30 flex items-center justify-center">
-                              <FileJson className="w-8 h-8 text-accent-green" />
+                            <div className="w-14 h-14 rounded-xl border border-accent-green/30 bg-accent-green/5 flex items-center justify-center">
+                              <FileJson className="w-7 h-7 text-accent-green" />
                             </div>
                             <div>
-                              <p className="text-lg font-medium text-accent-green">{file.name}</p>
-                              <p className="text-sm text-text-muted mt-1">
-                                {(file.size / 1024).toFixed(1)} KB - Ready for analysis
+                              <p className="font-medium text-text-primary">{file.name}</p>
+                              <p className="font-mono text-xs text-text-muted mt-1">
+                                {(file.size / 1024).toFixed(1)} KB · ready for diagnosis
                               </p>
                             </div>
                           </div>
                         ) : (
                           <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-bg-tertiary to-bg-secondary border border-border-color flex items-center justify-center group-hover:border-accent-blue/50 transition-colors">
-                              <Upload className="w-8 h-8 text-text-muted" />
+                            <div className="w-14 h-14 rounded-xl border border-border-strong bg-bg-tertiary flex items-center justify-center">
+                              <Upload className="w-7 h-7 text-text-muted" />
                             </div>
                             <div>
-                              <p className="text-lg font-medium text-text-primary">Drop your snapshot here</p>
+                              <p className="font-medium text-text-primary">Drop your snapshot here</p>
                               <p className="text-sm text-text-muted mt-1">or click to browse files</p>
                             </div>
                           </div>
@@ -372,7 +367,6 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </label>
-
                 </form>
 
                 {/* Submit Button - Outside form to avoid label interference */}
@@ -380,116 +374,89 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => handleSubmit()}
-                    className="relative z-20 w-full mt-6 py-4 rounded-xl bg-gradient-to-r from-accent-green to-accent-blue text-white font-semibold text-lg hover:shadow-lg hover:shadow-accent-green/20 transition-all duration-300 flex items-center justify-center gap-3 group cursor-pointer"
+                    className="btn btn-primary relative z-20 w-full mt-6 !py-3.5 text-base group"
                   >
-                    <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
-                    Start AI Analysis
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    <Sparkles className="w-5 h-5" />
+                    Run diagnosis
+                    <ArrowRight className="w-5 h-5 transition-transform duration-200 group-hover:translate-x-1" />
                   </button>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Side Panel - Features */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Feature Cards */}
-            <FeatureCard
-              icon={GitMerge}
-              title="Merge Conflicts"
-              description="Visual diff viewer with AI-powered conflict explanations and resolution suggestions"
-              color="yellow"
-            />
-            <FeatureCard
-              icon={GitBranch}
-              title="Detached HEAD"
-              description="Safely navigate commit history and recover your branch position"
-              color="blue"
-            />
-            <FeatureCard
-              icon={RotateCcw}
-              title="Stuck Rebases"
-              description="Step-by-step recovery with full undo support at every stage"
-              color="purple"
-            />
-            <FeatureCard
-              icon={Shield}
-              title="Reversible by Design"
-              description="Every action includes explicit undo paths using git reflog"
-              color="green"
-            />
+          {/* Side Panel - Capabilities */}
+          <div className="lg:col-span-2">
+            <div className="rounded-xl border border-border-color divide-y divide-border-color overflow-hidden bg-bg-secondary/60">
+              <SideItem
+                icon={GitMerge}
+                title="Merge conflicts"
+                description="Conflict blocks with per-hunk explanations and resolution choices"
+                tone="text-accent-yellow"
+              />
+              <SideItem
+                icon={GitBranch}
+                title="Detached HEAD"
+                description="Navigate commit history and recover branch position safely"
+                tone="text-accent-blue"
+              />
+              <SideItem
+                icon={RotateCcw}
+                title="Stuck rebases"
+                description="Step-by-step recovery with full undo support at every stage"
+                tone="text-accent-purple"
+              />
+              <SideItem
+                icon={Shield}
+                title="Reversible by design"
+                description="Every action includes explicit undo paths using git reflog"
+                tone="text-accent-green"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Stats Section */}
-        <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard value="100%" label="Reversible Actions" />
-          <StatCard value="< 30s" label="Analysis Time" />
-          <StatCard value="AI" label="Powered Recovery" />
-          <StatCard value="Reflog" label="Safety Fallback" />
+        {/* Guarantees strip */}
+        <div className="mt-14 grid grid-cols-2 md:grid-cols-4 divide-x divide-border-color rounded-xl border border-border-color overflow-hidden">
+          <StatCell value="100%" label="reversible actions" />
+          <StatCell value="read-only" label="snapshot capture" />
+          <StatCell value="schema" label="validated plans" />
+          <StatCell value="reflog" label="safety fallback" />
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-      `}</style>
     </main>
   );
 }
 
-function FeatureCard({
+function SideItem({
   icon: Icon,
   title,
   description,
-  color
+  tone,
 }: {
   icon: React.ElementType;
   title: string;
   description: string;
-  color: 'yellow' | 'blue' | 'purple' | 'green';
+  tone: string;
 }) {
-  const colorClasses = {
-    yellow: 'from-accent-yellow/20 to-accent-yellow/5 border-accent-yellow/30 hover:border-accent-yellow/50',
-    blue: 'from-accent-blue/20 to-accent-blue/5 border-accent-blue/30 hover:border-accent-blue/50',
-    purple: 'from-accent-purple/20 to-accent-purple/5 border-accent-purple/30 hover:border-accent-purple/50',
-    green: 'from-accent-green/20 to-accent-green/5 border-accent-green/30 hover:border-accent-green/50',
-  };
-
-  const iconColors = {
-    yellow: 'text-accent-yellow',
-    blue: 'text-accent-blue',
-    purple: 'text-accent-purple',
-    green: 'text-accent-green',
-  };
-
   return (
-    <div className={`group p-5 rounded-xl bg-gradient-to-br ${colorClasses[color]} border transition-all duration-300 hover:shadow-lg cursor-default`}>
-      <div className="flex items-start gap-4">
-        <div className={`p-2.5 rounded-lg bg-bg-primary/50 ${iconColors[color]}`}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className={`font-semibold ${iconColors[color]} mb-1`}>{title}</h3>
-          <p className="text-sm text-text-secondary leading-relaxed">{description}</p>
-        </div>
+    <div className="group flex items-start gap-4 p-5 transition-colors duration-200 hover:bg-bg-tertiary/60">
+      <div className={`p-2 rounded-lg border border-border-color bg-bg-primary ${tone}`}>
+        <Icon className="w-4 h-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-display text-sm font-semibold text-text-primary mb-1">{title}</h3>
+        <p className="text-[13px] text-text-secondary leading-relaxed">{description}</p>
       </div>
     </div>
   );
 }
 
-function StatCard({ value, label }: { value: string; label: string }) {
+function StatCell({ value, label }: { value: string; label: string }) {
   return (
-    <div className="p-6 rounded-xl bg-bg-secondary/50 border border-border-color text-center hover:border-accent-blue/30 transition-colors">
-      <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-accent-blue to-accent-purple bg-clip-text text-transparent">
-        {value}
-      </div>
-      <div className="text-sm text-text-muted mt-1">{label}</div>
+    <div className="p-6 text-center bg-bg-secondary/40">
+      <div className="font-display text-xl md:text-2xl font-bold text-accent-green">{value}</div>
+      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-muted mt-1.5">{label}</div>
     </div>
   );
 }
