@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const [dragActive, setDragActive] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
   const router = useRouter();
 
   // Simulate progress animation
@@ -107,9 +108,14 @@ export default function DashboardPage() {
   }, []);
 
   const copyCommand = async () => {
-    await navigator.clipboard.writeText('latchops snapshot --pretty > snapshot.json');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopyError(null);
+    try {
+      await navigator.clipboard.writeText('latchops snapshot --pretty > snapshot.json');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopyError('Unable to copy command. Please copy it manually.');
+    }
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -147,9 +153,20 @@ export default function DashboardPage() {
       const { sessionId } = await response.json();
 
       // Trigger plan generation
-      await fetch(`/api/sessions/${sessionId}/plan`, {
+      const planResponse = await fetch(`/api/sessions/${sessionId}/plan`, {
         method: 'POST',
       });
+
+      if (!planResponse.ok) {
+        let message = 'Failed to generate recovery plan';
+        try {
+          const data = await planResponse.json();
+          message = data.error || message;
+        } catch {
+          // Keep fallback message if body is not JSON
+        }
+        throw new Error(message);
+      }
 
       await new Promise(r => setTimeout(r, 500));
       setStage('complete');
@@ -242,6 +259,7 @@ export default function DashboardPage() {
                       latchops snapshot --pretty &gt; snapshot.json
                     </code>
                     <button
+                      type="button"
                       onClick={copyCommand}
                       aria-label="Copy command"
                       className="p-2 rounded-md border border-border-color bg-bg-tertiary hover:border-border-strong transition-colors"
@@ -253,6 +271,11 @@ export default function DashboardPage() {
                       )}
                     </button>
                   </div>
+                  {copyError && (
+                    <p className="mt-2 text-xs text-accent-yellow" role="status">
+                      {copyError}
+                    </p>
+                  )}
                 </div>
 
                 {/* Upload Area */}

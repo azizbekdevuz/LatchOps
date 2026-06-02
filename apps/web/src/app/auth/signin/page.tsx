@@ -120,6 +120,7 @@ function SignInForm() {
 
         <div className="space-y-3">
           <button
+            type="button"
             onClick={handleGoogleSignIn}
             className="btn w-full !py-2.5"
           >
@@ -145,6 +146,7 @@ function SignInForm() {
           </button>
 
           <button
+            type="button"
             onClick={handleKakaoSignIn}
             className="w-full py-2.5 px-4 rounded-lg border border-transparent bg-[#FEE500] text-[#000000] hover:bg-[#FDD800] transition-colors flex items-center justify-center gap-2 text-sm font-medium"
           >

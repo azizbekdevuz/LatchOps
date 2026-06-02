@@ -38,9 +38,9 @@
   --dur-slow: 700ms;
 
   /* Type scale */
-  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: var(--font-inter), -apple-system, "BlinkMacSystemFont", "Segoe UI", sans-serif;
   --font-display: var(--font-grotesk), var(--font-sans);
-  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
 }
 
 * {
@@ -65,7 +65,7 @@ body {
 }
 
 ::selection {
-  background: rgba(var(--glow-mint), 0.25);
+  background: rgb(var(--glow-mint) / 0.25);
   color: var(--text-primary);
 }
 
@@ -161,7 +161,7 @@ pre {
 
 .btn-primary:hover {
   background: #4dedb2;
-  box-shadow: 0 6px 24px -6px rgba(var(--glow-mint), 0.45);
+  box-shadow: 0 6px 24px -6px rgb(var(--glow-mint) / 0.45);
 }
 
 .btn-danger {
@@ -207,7 +207,7 @@ pre {
   inset: -20%;
   pointer-events: none;
   background:
-    radial-gradient(38% 32% at 22% 18%, rgba(var(--glow-mint), 0.10), transparent 70%),
+    radial-gradient(38% 32% at 22% 18%, rgb(var(--glow-mint) / 0.10), transparent 70%),
     radial-gradient(30% 28% at 78% 12%, rgba(98, 182, 203, 0.08), transparent 70%),
     radial-gradient(42% 36% at 60% 90%, rgba(154, 140, 255, 0.05), transparent 70%);
   animation: aurora-drift 26s var(--ease-out-soft) infinite alternate;
