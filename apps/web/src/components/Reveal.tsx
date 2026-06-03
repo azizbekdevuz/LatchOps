@@ -37,7 +37,7 @@ export function Reveal({ children, delay = 0, className = '', as: Tag = 'div' }:
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [Tag]);
 
   return createElement(
     Tag,

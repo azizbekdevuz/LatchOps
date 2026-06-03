@@ -152,6 +152,11 @@ export default function DashboardPage() {
       setStage('generating');
       const { sessionId } = await response.json();
 
+      // Validate sessionId
+      if (!sessionId || typeof sessionId !== 'string') {
+        throw new Error('Failed to retrieve a valid session ID');
+      }
+
       // Trigger plan generation
       const planResponse = await fetch(`/api/sessions/${sessionId}/plan`, {
         method: 'POST',
