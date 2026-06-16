@@ -50,25 +50,33 @@ function SignInForm() {
     signIn('kakao', { callbackUrl });
   };
 
+  const inputClass =
+    'w-full px-3.5 py-2.5 rounded-lg bg-bg-primary border border-border-color text-text-primary placeholder-text-muted focus:border-accent-green focus:outline-none transition-colors text-sm';
+
   return (
     <div className="w-full max-w-md">
-      <div className="bg-bg-secondary border border-border-color rounded-xl p-8">
-        <Link href="/" className="block text-center mb-6">
-          <span className="text-2xl font-bold bg-gradient-to-r from-accent-blue to-accent-purple bg-clip-text text-transparent">
-            LatchOps
+      <div className="rounded-xl border border-border-color bg-bg-secondary/90 backdrop-blur p-8 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)]">
+        <Link href="/" className="block text-center mb-2 no-underline hover:no-underline">
+          <span className="font-display text-2xl font-bold tracking-tight text-text-primary">
+            Latch<span className="text-accent-green">Ops</span>
           </span>
         </Link>
-        <h1 className="text-xl font-semibold mb-6 text-center">Sign in to your account</h1>
+        <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-text-muted text-center mb-8">
+          incident room access
+        </p>
+        <h1 className="font-display text-lg font-semibold mb-6 text-center text-text-primary">
+          Sign in to your account
+        </h1>
 
         {errorMessage && (
-          <div className="mb-4 p-3 rounded-md bg-accent-red/10 border border-accent-red text-accent-red text-sm">
+          <div className="mb-4 p-3 rounded-lg bg-accent-red/10 border border-accent-red/40 text-accent-red text-sm" role="alert">
             {errorMessage}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
+            <label htmlFor="email" className="block text-sm font-medium mb-1.5 text-text-secondary">
               Email
             </label>
             <input
@@ -76,13 +84,13 @@ function SignInForm() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-bg-tertiary border border-border-color focus:border-accent-blue focus:outline-none"
+              className={inputClass}
               required
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
+            <label htmlFor="password" className="block text-sm font-medium mb-1.5 text-text-secondary">
               Password
             </label>
             <input
@@ -90,7 +98,7 @@ function SignInForm() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-bg-tertiary border border-border-color focus:border-accent-blue focus:outline-none"
+              className={inputClass}
               required
             />
           </div>
@@ -98,24 +106,24 @@ function SignInForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2.5 rounded-md bg-accent-blue text-white font-medium hover:bg-accent-blue/90 transition-colors disabled:opacity-50"
+            className="btn btn-primary w-full !py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
 
         <div className="my-6 flex items-center">
-          <div className="flex-1 border-t border-border-color"></div>
-          <span className="px-4 text-sm text-text-muted">or continue with</span>
-          <div className="flex-1 border-t border-border-color"></div>
+          <div className="flex-1 hairline"></div>
+          <span className="px-4 font-mono text-[10px] uppercase tracking-[0.18em] text-text-muted">or continue with</span>
+          <div className="flex-1 hairline"></div>
         </div>
 
         <div className="space-y-3">
           <button
             onClick={handleGoogleSignIn}
-            className="w-full py-2.5 px-4 rounded-md border border-border-color bg-bg-tertiary hover:bg-bg-primary transition-colors flex items-center justify-center gap-2"
+            className="btn w-full !py-2.5"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -138,9 +146,9 @@ function SignInForm() {
 
           <button
             onClick={handleKakaoSignIn}
-            className="w-full py-2.5 px-4 rounded-md border border-border-color bg-[#FEE500] text-[#000000] hover:bg-[#FDD800] transition-colors flex items-center justify-center gap-2"
+            className="w-full py-2.5 px-4 rounded-lg border border-transparent bg-[#FEE500] text-[#000000] hover:bg-[#FDD800] transition-colors flex items-center justify-center gap-2 text-sm font-medium"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 fill="#000000"
                 d="M12 3C6.477 3 2 6.463 2 10.691c0 2.648 1.787 4.972 4.473 6.317l-.982 3.632c-.073.268.21.479.448.334l4.134-2.792c.634.084 1.28.127 1.927.127 5.523 0 10-3.463 10-7.618S17.523 3 12 3z"
@@ -152,7 +160,7 @@ function SignInForm() {
 
         <p className="text-center text-sm text-text-muted mt-6">
           Don&apos;t have an account?{' '}
-          <Link href="/auth/signup" className="text-accent-blue hover:underline">
+          <Link href="/auth/signup" className="text-accent-green hover:underline">
             Sign up
           </Link>
         </p>
@@ -164,7 +172,7 @@ function SignInForm() {
 function LoadingFallback() {
   return (
     <div className="w-full max-w-md">
-      <div className="bg-bg-secondary border border-border-color rounded-xl p-8">
+      <div className="rounded-xl border border-border-color bg-bg-secondary p-8">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-bg-tertiary rounded w-32 mx-auto"></div>
           <div className="h-6 bg-bg-tertiary rounded w-48 mx-auto"></div>
@@ -179,10 +187,14 @@ function LoadingFallback() {
 
 export default function SignInPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-bg-primary">
-      <Suspense fallback={<LoadingFallback />}>
-        <SignInForm />
-      </Suspense>
+    <main className="relative min-h-screen flex items-center justify-center p-4 bg-bg-primary overflow-hidden">
+      <div className="aurora" aria-hidden="true" />
+      <div className="absolute inset-0 bg-grid pointer-events-none" aria-hidden="true" />
+      <div className="relative">
+        <Suspense fallback={<LoadingFallback />}>
+          <SignInForm />
+        </Suspense>
+      </div>
     </main>
   );
 }

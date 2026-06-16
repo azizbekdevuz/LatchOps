@@ -1,131 +1,332 @@
 ﻿import Link from 'next/link';
 import { Header } from '@/components/Header';
+import { Reveal } from '@/components/Reveal';
+
+const CAPABILITIES = [
+  {
+    index: '01',
+    title: 'Repository state incidents',
+    body: 'Merge conflicts, detached HEAD, and rebase-in-progress classified from deterministic signals — porcelain status, reflog, branch topology.',
+    signal: 'classifier',
+  },
+  {
+    index: '02',
+    title: 'AI-generated change risk',
+    body: 'Risky commits and unmerged files surfaced before they reach a protected branch, with issue type and risk level attached.',
+    signal: 'risk engine',
+  },
+  {
+    index: '03',
+    title: 'Recovery tree',
+    body: 'A step-by-step rollback path grounded in reflog history. Every node is a concrete git command, not a vague suggestion.',
+    signal: 'planner',
+  },
+  {
+    index: '04',
+    title: 'Safe rollback path',
+    body: 'No destructive defaults. reset --hard and force-push stay gated; each step ships with its explicit undo command.',
+    signal: 'verifier',
+  },
+];
+
+const STEPS = [
+  {
+    step: '1',
+    title: 'Capture',
+    body: 'Run the CLI in your repository. Read-only diagnostics — status, reflog, conflicts — become a validated snapshot.',
+    code: 'latchops send --open',
+  },
+  {
+    step: '2',
+    title: 'Diagnose',
+    body: 'The state engine classifies the incident and builds a recovery tree from the snapshot signals.',
+    code: 'incident: merge_conflict',
+  },
+  {
+    step: '3',
+    title: 'Recover',
+    body: 'Execute the rollback path in the incident room. Verify progress with a fresh snapshot at any point.',
+    code: 'undo: git reflog → reset',
+  },
+];
+
+const DESIGN_ROWS = [
+  { layer: 'Snapshot schema', deterministic: 'Zod validation', llm: '—' },
+  { layer: 'Signal extraction', deterministic: 'Rules on status, reflog, conflicts', llm: '—' },
+  { layer: 'Classification', deterministic: 'Rule-based + schema', llm: 'Optional tie-break' },
+  { layer: 'Plan structure', deterministic: 'Fixed step / undo schema', llm: 'Wording only' },
+  { layer: 'Verification', deterministic: 'Signal diff vs plan', llm: 'Progress narrative' },
+];
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-bg-primary to-bg-secondary">
+    <main className="min-h-screen bg-bg-primary">
       <Header />
 
-      <section className="px-6 py-20 max-w-6xl mx-auto text-center">
-        <div className="inline-block px-4 py-1.5 mb-6 rounded-full bg-accent-blue/10 border border-accent-blue/20 text-accent-blue text-sm">Deterministic recovery · Explicit undo paths</div>
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-          AI Agent Safety Layer for
-          <span className="block bg-gradient-to-r from-accent-blue to-accent-purple bg-clip-text text-transparent">
-            Git &amp; CI/CD Resilience
-          </span>
-        </h1>
-        <p className="text-lg text-text-secondary max-w-2xl mx-auto mb-10">
-          LatchOps detects dangerous repository states—merge conflicts, detached HEAD, failed rebases,
-          and risky AI-generated commits—then delivers deterministic recovery plans with explicit undo paths via git reflog.
-        </p>
-        <div className="flex gap-4 justify-center flex-wrap">
-          <Link
-            href="/auth/signup"
-            className="px-8 py-3 rounded-lg bg-accent-green text-white font-medium hover:bg-accent-green/90 transition-colors shadow-lg shadow-accent-green/20"
-          >
-            Get started
-          </Link>
-          <a
-            href="#features"
-            className="px-8 py-3 rounded-lg border border-border-color text-text-primary hover:bg-bg-tertiary transition-colors"
-          >
-            Core capabilities
-          </a>
-        </div>
-      </section>
+      {/* ============ Hero ============ */}
+      <section className="relative overflow-hidden">
+        <div className="aurora" aria-hidden="true" />
+        <div className="absolute inset-0 bg-grid pointer-events-none" aria-hidden="true" />
 
-      <section className="px-6 pb-20 max-w-4xl mx-auto">
-        <div className="rounded-lg overflow-hidden border border-border-color bg-bg-secondary shadow-2xl">
-          <div className="flex items-center gap-2 px-4 py-3 bg-bg-tertiary border-b border-border-color">
-            <span className="w-3 h-3 rounded-full bg-accent-red" />
-            <span className="w-3 h-3 rounded-full bg-accent-yellow" />
-            <span className="w-3 h-3 rounded-full bg-accent-green" />
-            <span className="ml-4 text-sm text-text-muted">terminal</span>
+        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-24 lg:pt-28 lg:pb-32">
+          <div className="grid lg:grid-cols-12 gap-12 items-center">
+            {/* Copy */}
+            <div className="lg:col-span-6">
+              <Reveal>
+                <p className="font-mono text-xs uppercase tracking-[0.25em] text-accent-green mb-6 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent-green pulse-dot" />
+                  Deterministic recovery · Explicit undo paths
+                </p>
+              </Reveal>
+
+              <Reveal delay={80}>
+                <h1 className="font-display text-[2.6rem] leading-[1.05] sm:text-6xl lg:text-[4.2rem] font-bold tracking-tight text-text-primary">
+                  When AI breaks
+                  <br />
+                  your repo,
+                  <br />
+                  <span className="text-accent-green">latch back.</span>
+                </h1>
+              </Reveal>
+
+              <Reveal delay={160}>
+                <p className="mt-7 text-lg text-text-secondary max-w-xl leading-relaxed">
+                  LatchOps is the safety layer for teams shipping with Cursor, Claude Code,
+                  Copilot, and autonomous agents. It detects dangerous repository states and
+                  produces deterministic recovery plans — every step reversible via{' '}
+                  <code className="text-accent-green text-[0.95em] bg-transparent">git reflog</code>.
+                </p>
+              </Reveal>
+
+              <Reveal delay={240}>
+                <div className="mt-9 flex flex-wrap items-center gap-4">
+                  <Link
+                    href="/auth/signup"
+                    className="btn btn-primary px-7 py-3 text-base no-underline hover:no-underline"
+                  >
+                    Open incident room
+                  </Link>
+                  <a
+                    href="#how-it-works"
+                    className="btn px-7 py-3 text-base no-underline hover:no-underline"
+                  >
+                    See the workflow
+                  </a>
+                </div>
+              </Reveal>
+            </div>
+
+            {/* Terminal */}
+            <div className="lg:col-span-6">
+              <Reveal delay={200}>
+                <div className="lift relative rounded-xl border border-border-color bg-bg-secondary/90 backdrop-blur shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)]">
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border-color">
+                    <span className="w-2.5 h-2.5 rounded-full bg-accent-red/70" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-accent-yellow/70" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-accent-green/70" />
+                    <span className="ml-3 font-mono text-xs text-text-muted">latchops — zsh</span>
+                  </div>
+                  <pre className="!bg-transparent !border-0 p-6 text-[13px] leading-relaxed overflow-x-auto">
+                    <code>
+                      <span className="text-text-muted">$</span>{' '}
+                      <span className="text-text-primary">latchops send --open</span>
+                      {'\n'}
+                      <span className="text-text-muted">→ capturing read-only diagnostics…</span>
+                      {'\n\n'}
+                      <span className="text-accent-yellow">incident</span>
+                      <span className="text-text-muted">  merge_conflict · 3 files unmerged</span>
+                      {'\n'}
+                      <span className="text-accent-green">recovery</span>
+                      <span className="text-text-muted">  tree ready · 5 steps · all reversible</span>
+                      {'\n'}
+                      <span className="text-accent-blue">room</span>
+                      <span className="text-text-muted">      http://localhost:3000/incident/…</span>
+                      {'\n\n'}
+                      <span className="text-text-muted">$</span> <span className="caret" />
+                    </code>
+                  </pre>
+                </div>
+              </Reveal>
+            </div>
           </div>
-          <pre className="p-6 text-sm overflow-x-auto text-text-secondary">
-            <code>{`$ latchops send --open
-Repository state incident: merge_conflict
-Recovery tree ready · Safe rollback path available
-
-$ latchops snapshot --pretty > diagnostics.json
-Read-only capture for offline review`}</code>
-          </pre>
         </div>
       </section>
 
-      <section id="features" className="px-6 py-20 bg-bg-secondary border-y border-border-color">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">DevOps Rollback Infrastructure</h2>
-          <p className="text-text-secondary text-center mb-12 max-w-2xl mx-auto">
-            Production-branch protection for teams using Cursor, Claude Code, Copilot, and autonomous coding agents
-          </p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { title: 'Repository state incidents', desc: 'Classify merge conflicts, detached HEAD, and rebase-in-progress with deterministic signals.', color: 'accent-yellow' },
-              { title: 'AI-generated change risk', desc: 'Surface risky commits and unmerged files before they reach your main branch.', color: 'accent-blue' },
-              { title: 'Recovery tree', desc: 'Step-by-step rollback paths grounded in reflog and branch topology.', color: 'accent-purple' },
-              { title: 'Safe rollback path', desc: 'Every recovery step ships with explicit undo commands—no destructive defaults.', color: 'accent-green' },
-            ].map((feature) => (
-              <div key={feature.title} className="p-6 rounded-lg bg-bg-primary border border-border-color hover:border-accent-blue/50 transition-colors">
-                <h3 className={`font-semibold text-${feature.color} mb-2`}>{feature.title}</h3>
-                <p className="text-sm text-text-secondary">{feature.desc}</p>
-              </div>
+      <div className="hairline" />
+
+      {/* ============ Capabilities — editorial ledger ============ */}
+      <section id="capabilities" className="relative">
+        <div className="max-w-7xl mx-auto px-6 py-24">
+          <div className="grid lg:grid-cols-12 gap-12">
+            <div className="lg:col-span-4">
+              <Reveal>
+                <p className="font-mono text-xs uppercase tracking-[0.25em] text-text-muted mb-4">
+                  Capabilities
+                </p>
+                <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-text-primary leading-tight">
+                  Rollback
+                  <br />
+                  infrastructure,
+                  <br />
+                  not a Git GUI.
+                </h2>
+                <p className="mt-5 text-text-secondary leading-relaxed">
+                  Production-branch protection for AI-assisted development. Each capability maps
+                  to a stage in the state engine.
+                </p>
+              </Reveal>
+            </div>
+
+            <div className="lg:col-span-8">
+              <ul className="divide-y divide-border-color border-y border-border-color">
+                {CAPABILITIES.map((cap, i) => (
+                  <Reveal key={cap.index} delay={i * 90} as="li">
+                    <div className="group grid sm:grid-cols-12 gap-3 sm:gap-6 py-7 px-2 sm:items-baseline transition-colors duration-300 hover:bg-bg-secondary/60 rounded-lg">
+                      <span className="sm:col-span-1 font-mono text-sm text-accent-green/70 group-hover:text-accent-green transition-colors">
+                        {cap.index}
+                      </span>
+                      <div className="sm:col-span-8">
+                        <h3 className="font-display text-lg font-semibold text-text-primary mb-1.5">
+                          {cap.title}
+                        </h3>
+                        <p className="text-sm text-text-secondary leading-relaxed">{cap.body}</p>
+                      </div>
+                      <span className="sm:col-span-3 sm:text-right font-mono text-[11px] uppercase tracking-[0.18em] text-text-muted group-hover:text-accent-blue transition-colors">
+                        {cap.signal}
+                      </span>
+                    </div>
+                  </Reveal>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="hairline" />
+
+      {/* ============ How it works — rail ============ */}
+      <section id="how-it-works" className="relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 py-24">
+          <Reveal>
+            <p className="font-mono text-xs uppercase tracking-[0.25em] text-text-muted mb-4 text-center">
+              Workflow
+            </p>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-text-primary text-center">
+              Capture → Diagnose → Recover
+            </h2>
+            <p className="mt-4 text-text-secondary text-center max-w-xl mx-auto">
+              Full traceability from terminal to incident room.
+            </p>
+          </Reveal>
+
+          <div className="mt-16 grid md:grid-cols-3 gap-px bg-border-color rounded-xl overflow-hidden border border-border-color">
+            {STEPS.map((s, i) => (
+              <Reveal key={s.step} delay={i * 120}>
+                <div className="h-full bg-bg-secondary p-8 flex flex-col gap-4 transition-colors duration-300 hover:bg-bg-tertiary/70">
+                  <div className="flex items-center justify-between">
+                    <span className="font-display text-5xl font-bold text-border-strong select-none">
+                      {s.step}
+                    </span>
+                    <span className="font-mono text-[11px] text-accent-green border border-accent-green/25 rounded-full px-3 py-1 bg-accent-green/5">
+                      {s.code}
+                    </span>
+                  </div>
+                  <h3 className="font-display text-xl font-semibold text-text-primary">{s.title}</h3>
+                  <p className="text-sm text-text-secondary leading-relaxed">{s.body}</p>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="how-it-works" className="px-6 py-20 max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-4">How It Works</h2>
-        <p className="text-text-secondary text-center mb-12">Capture, diagnose, and recover—with full traceability</p>
-        <div className="flex flex-col md:flex-row gap-8 items-start">
-          {[
-            { step: '1', title: 'Capture', desc: 'Run latchops snapshot or latchops send in your repository' },
-            { step: '2', title: 'Diagnose', desc: 'LatchOps classifies the incident and builds a recovery tree' },
-            { step: '3', title: 'Recover', desc: 'Execute the rollback path with deterministic undo at every step' },
-          ].map((item, i) => (
-            <div key={item.step} className="flex-1 text-center relative">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-accent-blue to-accent-purple text-white flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg">
-                {item.step}
-              </div>
-              <h3 className="font-semibold mb-2 text-lg">{item.title}</h3>
-              <p className="text-sm text-text-secondary">{item.desc}</p>
-              {i < 2 && (
-                <div className="hidden md:block absolute top-7 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-accent-blue/50 to-transparent" />
-              )}
+      <div className="hairline" />
+
+      {/* ============ Deterministic-first ============ */}
+      <section className="relative">
+        <div className="max-w-5xl mx-auto px-6 py-24">
+          <Reveal>
+            <p className="font-mono text-xs uppercase tracking-[0.25em] text-text-muted mb-4">
+              State engine
+            </p>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-text-primary">
+              Deterministic first. LLM where it adds clarity.
+            </h2>
+            <p className="mt-4 text-text-secondary max-w-2xl leading-relaxed">
+              Git diagnostics and risk classification run before any model call. Plans are
+              structured, schema-validated, and auditable in the incident room.
+            </p>
+          </Reveal>
+
+          <Reveal delay={140}>
+            <div className="mt-10 overflow-x-auto rounded-xl border border-border-color">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-bg-secondary text-left">
+                    <th className="px-5 py-3.5 font-mono text-[11px] uppercase tracking-[0.18em] text-text-muted font-medium">Layer</th>
+                    <th className="px-5 py-3.5 font-mono text-[11px] uppercase tracking-[0.18em] text-accent-green font-medium">Deterministic</th>
+                    <th className="px-5 py-3.5 font-mono text-[11px] uppercase tracking-[0.18em] text-text-muted font-medium">LLM role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {DESIGN_ROWS.map((row) => (
+                    <tr
+                      key={row.layer}
+                      className="border-t border-border-color transition-colors hover:bg-bg-secondary/60"
+                    >
+                      <td className="px-5 py-3.5 text-text-primary font-medium">{row.layer}</td>
+                      <td className="px-5 py-3.5 text-text-secondary">{row.deterministic}</td>
+                      <td className="px-5 py-3.5 text-text-muted">{row.llm}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))}
+          </Reveal>
         </div>
       </section>
 
-      <section className="px-6 py-16 bg-bg-tertiary/50 border-y border-border-color">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-block px-3 py-1 mb-4 rounded-full bg-accent-purple/20 text-accent-purple text-sm font-medium">
-            State engine
-          </div>
-          <h2 className="text-2xl font-bold mb-4">Deterministic-first design</h2>
-          <p className="text-text-secondary max-w-2xl mx-auto">
-            Git diagnostics and repository risk classification run before any LLM step. Recovery plans are structured,
-            verifiable, and traceable in the incident room—including pipeline stages for audit and rollback verification.
+      {/* ============ CTA ============ */}
+      <section className="relative overflow-hidden">
+        <div className="aurora" aria-hidden="true" />
+        <div className="relative max-w-3xl mx-auto px-6 py-28 text-center">
+          <Reveal>
+            <h2 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-text-primary leading-tight">
+              Protect production branches
+              <br />
+              from <span className="text-accent-green">AI drift.</span>
+            </h2>
+          </Reveal>
+          <Reveal delay={120}>
+            <p className="mt-6 text-text-secondary max-w-xl mx-auto leading-relaxed">
+              Deterministic diagnostics first. Structured recovery always. Run it locally from
+              the monorepo today.
+            </p>
+          </Reveal>
+          <Reveal delay={220}>
+            <div className="mt-9">
+              <Link
+                href="/auth/signup"
+                className="btn btn-primary px-8 py-3.5 text-base no-underline hover:no-underline"
+              >
+                Get started
+              </Link>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ============ Footer ============ */}
+      <footer className="border-t border-border-color">
+        <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="font-mono text-xs text-text-muted">
+            LatchOps — AI agent safety layer for Git recovery and DevOps resilience
+          </p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-text-muted">
+            reversible by design
           </p>
         </div>
-      </section>
-
-      <section className="px-6 py-20 text-center bg-gradient-to-r from-accent-blue/10 to-accent-purple/10">
-        <h2 className="text-3xl font-bold mb-4">Protect production branches from AI drift</h2>
-        <p className="text-text-secondary mb-8 max-w-xl mx-auto">
-          LatchOps is rollback infrastructure—not a toy dashboard. Deterministic diagnostics first; LLM guidance only where it adds clarity.
-        </p>
-        <Link
-          href="/auth/signup"
-          className="inline-block px-8 py-3 rounded-lg bg-accent-green text-white font-medium hover:bg-accent-green/90 transition-colors shadow-lg shadow-accent-green/20"
-        >
-          Open incident room
-        </Link>
-      </section>
-
-      <footer className="px-6 py-8 text-center text-sm text-text-muted border-t border-border-color">
-        <p>LatchOps — AI agent safety layer for Git recovery and DevOps resilience</p>
       </footer>
     </main>
   );

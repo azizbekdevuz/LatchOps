@@ -8,22 +8,29 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // GitHub-inspired dark theme
-        'bg-primary': '#0d1117',
-        'bg-secondary': '#161b22',
-        'bg-tertiary': '#21262d',
-        'border-color': '#30363d',
-        'text-primary': '#c9d1d9',
-        'text-secondary': '#8b949e',
-        'text-muted': '#6e7681',
-        'accent-blue': '#58a6ff',
-        'accent-green': '#3fb950',
-        'accent-red': '#f85149',
-        'accent-yellow': '#d29922',
-        'accent-purple': '#a371f7',
+        // LatchOps "control-room ink" palette — mirrors globals.css :root
+        'bg-primary': '#06080b',
+        'bg-secondary': '#0b0f14',
+        'bg-tertiary': '#131a21',
+        'border-color': '#1d2630',
+        'border-strong': '#2b3845',
+        'text-primary': '#e9eef3',
+        'text-secondary': '#93a1ae',
+        'text-muted': '#5b6873',
+        'accent-blue': '#62b6cb',
+        'accent-green': '#34e0a1',
+        'accent-red': '#ff5d55',
+        'accent-yellow': '#e3a13c',
+        'accent-purple': '#9a8cff',
       },
       fontFamily: {
-        mono: ['ui-monospace', 'SFMono-Regular', 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', 'monospace'],
+        sans: ['var(--font-inter)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        display: ['var(--font-grotesk)', 'var(--font-inter)', 'sans-serif'],
+        mono: ['var(--font-jetbrains)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
+      },
+      transitionTimingFunction: {
+        'out-soft': 'cubic-bezier(0.22, 1, 0.36, 1)',
+        spring: 'cubic-bezier(0.34, 1.4, 0.64, 1)',
       },
     },
   },
