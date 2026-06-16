@@ -82,13 +82,13 @@ export function Header() {
             ) : (
               <>
                 <a
-                  href="#capabilities"
+                  href="/#capabilities"
                   className="nav-link py-1 text-sm text-text-secondary hover:text-text-primary no-underline hover:no-underline transition-colors"
                 >
                   Capabilities
                 </a>
                 <a
-                  href="#how-it-works"
+                  href="/#how-it-works"
                   className="nav-link py-1 text-sm text-text-secondary hover:text-text-primary no-underline hover:no-underline transition-colors"
                 >
                   How it works
@@ -110,6 +110,7 @@ export function Header() {
                   </span>
                 </div>
                 <button
+                  type="button"
                   onClick={handleSignOut}
                   className="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:text-accent-red border border-border-color rounded-lg hover:border-accent-red/50 transition-colors"
                 >
@@ -137,6 +138,7 @@ export function Header() {
 
           {/* Mobile Menu Button */}
           <button
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-expanded={mobileMenuOpen}
             aria-label="Toggle navigation"
@@ -181,6 +183,7 @@ export function Header() {
                     Signed in as {session?.user?.email}
                   </div>
                   <button
+                    type="button"
                     onClick={handleSignOut}
                     className="flex items-center gap-3 px-4 py-3 text-accent-red"
                   >

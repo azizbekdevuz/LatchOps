@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode, type ElementType } from 'react';
+import { createElement, useEffect, useRef, type JSX, type ReactNode } from 'react';
+
+type RevealTag = keyof JSX.IntrinsicElements;
 
 interface RevealProps {
   children: ReactNode;
   /** Stagger delay in ms applied via CSS custom property. */
   delay?: number;
   className?: string;
-  as?: ElementType;
+  as?: RevealTag;
 }
 
 /**
@@ -15,7 +17,7 @@ interface RevealProps {
  * Reduced-motion users get content instantly (handled in globals.css).
  */
 export function Reveal({ children, delay = 0, className = '', as: Tag = 'div' }: RevealProps) {
-  const ref = useRef<HTMLElement | null>(null);
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const el = ref.current;
@@ -37,14 +39,13 @@ export function Reveal({ children, delay = 0, className = '', as: Tag = 'div' }:
     return () => observer.disconnect();
   }, []);
 
-  return (
-    <Tag
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ref={ref as any}
-      className={`reveal ${className}`}
-      style={{ ['--reveal-delay' as string]: `${delay}ms` }}
-    >
-      {children}
-    </Tag>
+  return createElement(
+    Tag,
+    {
+      ref,
+      className: `reveal ${className}`.trim(),
+      style: { ['--reveal-delay' as string]: `${delay}ms` },
+    },
+    children
   );
 }
