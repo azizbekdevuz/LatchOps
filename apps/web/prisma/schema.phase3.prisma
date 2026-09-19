@@ -1,0 +1,243 @@
+// Prisma schema for LatchOps - Git Incident Room (Phase 3 baseline)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+
+  accounts           Account[]
+  sessions           Session[]
+  gitSessions        GitSession[]
+  authenticationLogs AuthenticationLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuthenticationLog {
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action        String
+  ipAddress     String?
+  userAgent     String?  @db.Text
+  success       Boolean
+  failureReason String?
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model GitSession {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  title        String?
+  os           String?
+  repoRootHash String?
+  status       String  @default("pending")
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  snapshots Snapshot[]
+  analyses  Analysis[]
+  traces    Trace[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
+}
+
+model Snapshot {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  gitSessionId String
+  gitSession   GitSession @relation(fields: [gitSessionId], references: [id], onDelete: Cascade)
+
+  snapshotJson Json
+  truncated    Boolean @default(false)
+
+  analysis Analysis?
+  traces   Trace[]
+
+  @@index([gitSessionId])
+  @@index([createdAt])
+}
+
+model Analysis {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  gitSessionId String
+  gitSession   GitSession @relation(fields: [gitSessionId], references: [id], onDelete: Cascade)
+
+  snapshotId String   @unique
+  snapshot   Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  issueType     String
+  summary       String? @db.Text
+  repoGraphJson Json?
+  signalsJson   Json?
+  planJson      Json?
+  risk          String?
+  engineVersion String?
+
+  conflictFiles ConflictFile[]
+  planSteps     PlanStep[]
+
+  @@index([gitSessionId])
+  @@index([issueType])
+}
+
+model ConflictFile {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  analysisId String
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  path             String
+  highLevelSummary String? @db.Text
+  hunks            ConflictHunk[]
+
+  @@index([analysisId])
+}
+
+model ConflictHunk {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  conflictFileId String
+  conflictFile   ConflictFile @relation(fields: [conflictFileId], references: [id], onDelete: Cascade)
+
+  index     Int
+  startLine Int?
+  endLine   Int?
+
+  baseText   String @db.Text
+  oursText   String @db.Text
+  theirsText String @db.Text
+
+  explanation      String? @db.Text
+  suggestedChoice  String?
+  suggestedContent String? @db.Text
+  userChoice       String?
+  userContent      String? @db.Text
+
+  @@index([conflictFileId])
+}
+
+model PlanStep {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  analysisId String
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  index       Int
+  title       String
+  rationale   String? @db.Text
+  dangerLevel String  @default("safe")
+
+  commandsJson Json
+  verifyJson   Json
+  undoJson     Json
+
+  status        String    @default("pending")
+  completedAt   DateTime?
+  userConfirmed Boolean   @default(false)
+
+  @@index([analysisId])
+  @@index([index])
+}
+
+model Trace {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  gitSessionId String
+  gitSession   GitSession @relation(fields: [gitSessionId], references: [id], onDelete: Cascade)
+
+  stage String
+
+  snapshotId String?
+  snapshot   Snapshot? @relation(fields: [snapshotId], references: [id], onDelete: SetNull)
+
+  inputJson  Json?
+  outputJson Json?
+
+  durationMs   Int?
+  success      Boolean @default(true)
+  errorMessage String? @db.Text
+
+  @@index([gitSessionId])
+  @@index([stage])
+  @@index([createdAt])
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  type         String
+  userId       String?
+  gitSessionId String?
+  metadata     Json?
+
+  @@index([type])
+  @@index([userId])
+  @@index([createdAt])
+}

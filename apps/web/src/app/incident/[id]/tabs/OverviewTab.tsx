@@ -1,199 +1,156 @@
 'use client';
 
-import { useMemo } from 'react';
-import { AlertTriangle, Link2, RefreshCw, CheckCircle, HelpCircle } from 'lucide-react';
+import { AlertTriangle, Link2, RefreshCw, CheckCircle, HelpCircle, FileEdit, ShieldAlert } from 'lucide-react';
+import type { IncidentData } from '../incident-data';
 
-interface RepoGraph {
-  nodes: Array<{ id: string; type: string; label: string; sha?: string; isCurrent?: boolean }>;
-  edges: Array<{ from: string; to: string; type?: string }>;
+const INCIDENT_INFO: Record<string, { title: string; description: string; color: string }> = {
+  merge_conflict: {
+    title: 'Merge Conflict',
+    description: 'Conflicting changes must be resolved before the operation can complete.',
+    color: 'text-yellow-500',
+  },
+  detached_head: {
+    title: 'Detached HEAD',
+    description: 'HEAD points at a commit rather than a branch. New commits can be lost if you switch away without saving them.',
+    color: 'text-orange-500',
+  },
+  rebase_in_progress: {
+    title: 'Rebase in Progress',
+    description: 'A rebase is underway. Continue, skip, or abort it.',
+    color: 'text-blue-500',
+  },
+  dirty_worktree: {
+    title: 'Uncommitted Changes',
+    description: 'The working tree has pending changes that can be preserved before any recovery.',
+    color: 'text-amber-500',
+  },
+  clean: {
+    title: 'Clean State',
+    description: 'No issues detected. The repository is in a clean state.',
+    color: 'text-green-500',
+  },
+  unknown: {
+    title: 'Needs Manual Review',
+    description: 'The repository state could not be classified into a first-class incident; proceed with read-only diagnostics.',
+    color: 'text-gray-400',
+  },
+};
+
+function icon(type: string, cls: string) {
+  switch (type) {
+    case 'merge_conflict':
+      return <AlertTriangle className={cls} />;
+    case 'detached_head':
+      return <Link2 className={cls} />;
+    case 'rebase_in_progress':
+      return <RefreshCw className={cls} />;
+    case 'dirty_worktree':
+      return <FileEdit className={cls} />;
+    case 'clean':
+      return <CheckCircle className={cls} />;
+    default:
+      return <HelpCircle className={cls} />;
+  }
 }
 
-interface SessionData {
-  id: string;
-  title: string;
-  status: string;
-  createdAt: string;
-  snapshot: {
-    branch: { head: string; oid: string };
-    platform: string;
-    isDetachedHead: boolean;
-    rebaseState: { inProgress: boolean };
-  };
-  analysis: {
-    issueType: string;
-    summary: string;
-    repoGraphJson: unknown;
-    conflictFiles: Array<unknown>;
-    planSteps: Array<unknown>;
-  } | null;
-}
-
-interface OverviewTabProps {
-  sessionData: SessionData;
-}
-
-export default function OverviewTab({ sessionData }: OverviewTabProps) {
-  const repoGraph = sessionData.analysis?.repoGraphJson as RepoGraph | undefined;
-
-  const issueInfo = useMemo(() => {
-    const type = sessionData.analysis?.issueType || 'unknown';
-    const info: Record<string, { title: string; description: string; color: string }> = {
-      merge_conflict: {
-        title: 'Merge Conflict',
-        description: 'Your repository has conflicting changes that need to be resolved before you can complete the merge.',
-        color: 'text-yellow-500',
-      },
-      detached_head: {
-        title: 'Detached HEAD',
-        description: 'You are not on any branch. Your commits may be lost if you switch branches without creating a new branch first.',
-        color: 'text-orange-500',
-      },
-      rebase_in_progress: {
-        title: 'Rebase in Progress',
-        description: 'A rebase operation is currently in progress. You need to continue, skip, or abort it.',
-        color: 'text-blue-500',
-      },
-      clean: {
-        title: 'Clean State',
-        description: 'Your repository is in a clean state with no issues detected.',
-        color: 'text-green-500',
-      },
-      unknown: {
-        title: 'Unknown State',
-        description: 'Unable to determine the repository state.',
-        color: 'text-gray-500',
-      },
-    };
-    return info[type] || info.unknown;
-  }, [sessionData.analysis?.issueType]);
+export default function OverviewTab({ data }: { data: IncidentData }) {
+  const info = INCIDENT_INFO[data.incidentType] ?? INCIDENT_INFO.unknown;
+  const plan = data.plan;
+  const w = data.signals?.worktree;
 
   return (
     <div className="space-y-6">
-      {/* Summary Card */}
       <div className="bg-bg-secondary border border-border-color rounded-lg p-6">
         <div className="flex items-start gap-4">
-          <div className={`${issueInfo.color}`}>
-            {sessionData.analysis?.issueType === 'merge_conflict' && <AlertTriangle className="w-8 h-8" />}
-            {sessionData.analysis?.issueType === 'detached_head' && <Link2 className="w-8 h-8" />}
-            {sessionData.analysis?.issueType === 'rebase_in_progress' && <RefreshCw className="w-8 h-8" />}
-            {sessionData.analysis?.issueType === 'clean' && <CheckCircle className="w-8 h-8" />}
-            {(!sessionData.analysis?.issueType || sessionData.analysis?.issueType === 'unknown') && <HelpCircle className="w-8 h-8" />}
-          </div>
+          <div className={info.color}>{icon(data.incidentType, 'w-8 h-8')}</div>
           <div className="flex-1">
-            <h2 className={`text-xl font-semibold ${issueInfo.color}`}>{issueInfo.title}</h2>
-            <p className="text-text-secondary mt-1">{issueInfo.description}</p>
-            {sessionData.analysis?.summary && (
-              <p className="text-text-primary mt-3 p-3 bg-bg-tertiary rounded-md">
-                {sessionData.analysis.summary}
-              </p>
+            <div className="flex items-center gap-3">
+              <h2 className={`text-xl font-semibold ${info.color}`}>{info.title}</h2>
+              {data.risk && (
+                <span className="text-xs px-2 py-0.5 rounded bg-bg-tertiary border border-border-color capitalize">
+                  {data.risk} risk
+                </span>
+              )}
+              {plan?.manualReviewRequired && (
+                <span className="text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 flex items-center gap-1">
+                  <ShieldAlert className="w-3 h-3" /> Manual review
+                </span>
+              )}
+            </div>
+            <p className="text-text-secondary mt-1">{info.description}</p>
+            {data.summary && (
+              <p className="text-text-primary mt-3 p-3 bg-bg-tertiary rounded-md">{data.summary}</p>
             )}
           </div>
         </div>
       </div>
 
-      {/* Repository Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-bg-secondary border border-border-color rounded-lg p-4">
           <h3 className="text-sm font-medium text-text-muted mb-3">Repository State</h3>
           <dl className="space-y-2">
-            <div className="flex justify-between">
-              <dt className="text-text-secondary">Branch</dt>
-              <dd className="font-mono text-sm">{sessionData.snapshot.branch.head}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-text-secondary">Commit</dt>
-              <dd className="font-mono text-sm">{sessionData.snapshot.branch.oid?.slice(0, 7) || 'N/A'}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-text-secondary">Platform</dt>
-              <dd className="text-sm">{sessionData.snapshot.platform}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-text-secondary">Detached HEAD</dt>
-              <dd className="text-sm">{sessionData.snapshot.isDetachedHead ? 'Yes' : 'No'}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-text-secondary">Rebase Active</dt>
-              <dd className="text-sm">{sessionData.snapshot.rebaseState.inProgress ? 'Yes' : 'No'}</dd>
-            </div>
+            <Row label="Branch" value={data.branch.name ?? (data.branch.isDetached ? '(detached)' : 'unknown')} mono />
+            <Row label="Commit" value={data.branch.oid?.slice(0, 8) ?? 'N/A'} mono />
+            <Row label="Detached HEAD" value={data.branch.isDetached ? 'Yes' : 'No'} />
+            <Row label="Staged" value={String(w?.staged ?? 0)} />
+            <Row label="Modified" value={String(w?.modified ?? 0)} />
+            <Row label="Untracked" value={String(w?.untracked ?? 0)} />
+            <Row label="Conflicted" value={String(w?.conflicted ?? 0)} />
           </dl>
         </div>
 
         <div className="bg-bg-secondary border border-border-color rounded-lg p-4">
-          <h3 className="text-sm font-medium text-text-muted mb-3">Analysis Summary</h3>
-          <dl className="space-y-2">
-            <div className="flex justify-between">
-              <dt className="text-text-secondary">Conflict Files</dt>
-              <dd className="font-medium">{sessionData.analysis?.conflictFiles?.length || 0}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-text-secondary">Plan Steps</dt>
-              <dd className="font-medium">{sessionData.analysis?.planSteps?.length || 0}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-text-secondary">Issue Type</dt>
-              <dd className="font-medium capitalize">{sessionData.analysis?.issueType?.replace('_', ' ') || 'Unknown'}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-text-secondary">Session Status</dt>
-              <dd className="font-medium capitalize">{sessionData.status}</dd>
-            </div>
-          </dl>
+          <h3 className="text-sm font-medium text-text-muted mb-3">Why this classification</h3>
+          {data.reasons.length > 0 ? (
+            <ul className="space-y-2">
+              {data.reasons.map((r, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-text-secondary">
+                  <span className="text-accent-blue mt-1">•</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-text-muted">No classification reasons recorded.</p>
+          )}
         </div>
       </div>
 
-      {/* Repo Graph Visualization */}
-      {repoGraph && repoGraph.nodes && repoGraph.nodes.length > 0 && (
+      {plan && plan.preconditions.length > 0 && (
         <div className="bg-bg-secondary border border-border-color rounded-lg p-4">
-          <h3 className="text-sm font-medium text-text-muted mb-4">Repository Graph</h3>
-          <div className="overflow-x-auto">
-            <div className="min-w-[400px] p-4">
-              {/* Simple text-based graph representation */}
-              <div className="font-mono text-sm space-y-2">
-                {repoGraph.nodes.map((node, index) => (
-                  <div key={node.id} className="flex items-center gap-3">
-                    <span className={`w-3 h-3 rounded-full ${
-                      node.isCurrent ? 'bg-accent-blue' :
-                      node.type === 'branch' ? 'bg-green-500' :
-                      node.type === 'tag' ? 'bg-yellow-500' : 'bg-gray-500'
-                    }`} />
-                    <span className={node.isCurrent ? 'text-accent-blue font-bold' : 'text-text-primary'}>
-                      {node.label}
-                    </span>
-                    {node.sha && (
-                      <span className="text-text-muted text-xs">{node.sha.slice(0, 7)}</span>
-                    )}
-                    {node.isCurrent && (
-                      <span className="text-xs bg-accent-blue/20 text-accent-blue px-2 py-0.5 rounded">HEAD</span>
-                    )}
-                    {index < repoGraph.nodes.length - 1 && (
-                      <span className="text-text-muted ml-auto">│</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <h3 className="text-sm font-medium text-text-muted mb-3">Preconditions</h3>
+          <ul className="space-y-1">
+            {plan.preconditions.map((p, i) => (
+              <li key={i} className="text-sm text-text-secondary flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-accent-green mt-0.5 flex-shrink-0" />
+                <span>{p}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
-      {/* Quick Actions */}
-      <div className="bg-bg-secondary border border-border-color rounded-lg p-4">
-        <h3 className="text-sm font-medium text-text-muted mb-3">Quick Actions</h3>
-        <div className="flex flex-wrap gap-2">
-          {sessionData.analysis?.issueType === 'merge_conflict' && (
-            <button className="px-4 py-2 bg-accent-blue hover:bg-accent-blue/80 rounded-md text-sm font-medium transition-colors">
-              View Conflicts
-            </button>
-          )}
-          <button className="px-4 py-2 bg-bg-tertiary hover:bg-bg-tertiary/80 border border-border-color rounded-md text-sm font-medium transition-colors">
-            View Recovery Plan
-          </button>
-          <button className="px-4 py-2 bg-bg-tertiary hover:bg-bg-tertiary/80 border border-border-color rounded-md text-sm font-medium transition-colors">
-            Upload New Snapshot
-          </button>
+      {plan && plan.warnings.length > 0 && (
+        <div className="bg-yellow-500/5 border border-yellow-500/30 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-yellow-500 mb-3 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" /> Warnings
+          </h3>
+          <ul className="space-y-1">
+            {plan.warnings.map((warning, i) => (
+              <li key={i} className="text-sm text-text-secondary">{warning}</li>
+            ))}
+          </ul>
         </div>
-      </div>
+      )}
+    </div>
+  );
+}
+
+function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex justify-between">
+      <dt className="text-text-secondary">{label}</dt>
+      <dd className={mono ? 'font-mono text-sm' : 'text-sm'}>{value}</dd>
     </div>
   );
 }

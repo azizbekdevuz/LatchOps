@@ -39,7 +39,7 @@ if (process.env.KAKAO_CLIENT_ID && process.env.KAKAO_CLIENT_SECRET) {
 }
 
 // Public routes that don't require authentication
-const publicRoutes = ['/', '/auth/signin', '/auth/signup', '/auth/error'];
+const publicRoutes = ['/', '/auth/signin', '/auth/signup', '/auth/error', '/hacksprint', '/proof'];
 
 export const authConfig: NextAuthConfig = {
   providers,

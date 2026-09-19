@@ -137,6 +137,8 @@ export default function DashboardPage() {
       await new Promise(r => setTimeout(r, 400));
       setStage('analyzing');
 
+      // Stage 3: Deterministic analysis + plan (single pipeline, no LLM)
+      setStage('generating');
       const response = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -144,52 +146,29 @@ export default function DashboardPage() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create session');
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to analyze snapshot');
       }
 
-      // Stage 3: Generate plan
-      setStage('generating');
-      const { sessionId } = await response.json();
+      const { sessionId, incidentType, risk } = await response.json();
 
-      // Validate sessionId
       if (!sessionId || typeof sessionId !== 'string') {
         throw new Error('Failed to retrieve a valid session ID');
       }
 
-      // Trigger plan generation
-      const planResponse = await fetch(`/api/sessions/${sessionId}/plan`, {
-        method: 'POST',
-      });
-
-      if (!planResponse.ok) {
-        let message = 'Failed to generate recovery plan';
-        try {
-          const data = await planResponse.json();
-          message = data.error || message;
-        } catch {
-          // Keep fallback message if body is not JSON
-        }
-        throw new Error(message);
-      }
-
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 400));
       setStage('complete');
 
-      // Extract analysis info
       setResult({
         sessionId,
-        issueType: snapshot.unmergedFiles?.length > 0 ? 'merge_conflict' :
-                   snapshot.isDetachedHead ? 'detached_head' :
-                   snapshot.rebaseState?.inProgress ? 'rebase_in_progress' : 'clean',
+        issueType: incidentType || 'unknown',
         conflictCount: snapshot.unmergedFiles?.length || 0,
-        riskLevel: snapshot.unmergedFiles?.length > 3 ? 'high' :
-                   snapshot.unmergedFiles?.length > 0 ? 'medium' : 'low',
+        riskLevel: risk || 'low',
       });
 
-      // Navigate after brief delay
+      // Navigate to the canonical incident room.
       setTimeout(() => {
-        router.push(`/session/${sessionId}`);
+        router.push(`/incident/${sessionId}`);
       }, 1500);
 
     } catch (err) {
@@ -234,14 +213,15 @@ export default function DashboardPage() {
         <div className="mb-12">
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-accent-green mb-4 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-accent-green pulse-dot" />
-            Incident intake
+            Import / air-gapped analysis
           </p>
           <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-text-primary">
-            Diagnose a repository state
+            Import a snapshot for analysis
           </h1>
           <p className="mt-3 text-text-secondary text-lg max-w-2xl">
-            Send a snapshot for deterministic diagnosis, a recovery tree, and a safe rollback
-            path with explicit undo at every step.
+            The primary workflow is <code className="px-1.5 py-0.5 bg-bg-tertiary rounded font-mono text-sm">latchops send</code>{' '}
+            from your repository. This manual import is an advanced/air-gapped path for analyzing a
+            snapshot JSON — deterministic diagnosis with a recovery plan and explicit undo at every step.
           </p>
         </div>
 

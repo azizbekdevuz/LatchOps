@@ -101,8 +101,14 @@ export default function LandingPage() {
               <Reveal delay={240}>
                 <div className="mt-9 flex flex-wrap items-center gap-4">
                   <Link
-                    href="/auth/signup"
+                    href="/hacksprint"
                     className="btn btn-primary px-7 py-3 text-base no-underline hover:no-underline"
+                  >
+                    Recovery proof
+                  </Link>
+                  <Link
+                    href="/auth/signup"
+                    className="btn px-7 py-3 text-base no-underline hover:no-underline"
                   >
                     Open incident room
                   </Link>

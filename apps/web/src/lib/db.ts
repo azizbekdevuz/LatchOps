@@ -178,6 +178,11 @@ export interface CreateAnalysisInput {
   issueType: string;
   summary?: string | null;
   repoGraphJson?: unknown;
+  // Phase 3 canonical deterministic-engine fields.
+  signalsJson?: unknown;
+  planJson?: unknown;
+  risk?: string | null;
+  engineVersion?: string | null;
 }
 
 export async function createAnalysis(input: CreateAnalysisInput): Promise<Analysis> {
@@ -188,6 +193,10 @@ export async function createAnalysis(input: CreateAnalysisInput): Promise<Analys
       issueType: input.issueType,
       summary: input.summary,
       repoGraphJson: input.repoGraphJson as object | undefined,
+      signalsJson: input.signalsJson as object | undefined,
+      planJson: input.planJson as object | undefined,
+      risk: input.risk,
+      engineVersion: input.engineVersion,
     },
   });
 }

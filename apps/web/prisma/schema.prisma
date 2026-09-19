@@ -27,6 +27,12 @@ model User {
   gitSessions        GitSession[]
   authenticationLogs AuthenticationLog[]
 
+  memberships           Membership[]
+  personalOrganization  Organization?   @relation("PersonalOrganization")
+  incidentsCreated      Incident[]
+  auditEvents           AuditEvent[]
+  cliCredentialsCreated CliCredential[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -36,7 +42,7 @@ model AuthenticationLog {
   id            String   @id @default(cuid())
   userId        String?
   user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action        String   // LOGIN, REGISTER, LOGOUT, LOGIN_FAILED, TOKEN_REFRESH
+  action        String // LOGIN, REGISTER, LOGOUT, LOGIN_FAILED, TOKEN_REFRESH
   ipAddress     String?
   userAgent     String?  @db.Text
   success       Boolean
@@ -85,10 +91,270 @@ model VerificationToken {
 }
 
 // ============================================
+// Phase 4 — Multi-tenant domain
+// ============================================
+
+enum OrganizationStatus {
+  active
+  archived
+}
+
+enum MembershipRole {
+  owner
+  admin
+  member
+  viewer
+}
+
+enum IncidentStatus {
+  detected
+  triaged
+  plan_ready
+  recovery_in_progress
+  verification_pending
+  resolved
+  dismissed
+}
+
+enum IncidentSource {
+  cli
+  web_import
+  legacy_migration
+}
+
+enum SnapshotKind {
+  capture
+  verification
+}
+
+enum AuditActorType {
+  user
+  system
+  cli
+}
+
+model Organization {
+  id         String             @id @default(cuid())
+  slug       String             @unique
+  name       String
+  status     OrganizationStatus @default(active)
+  kind       String             @default("team") // "personal" | "team"
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  archivedAt DateTime?
+
+  personalOwnerUserId String? @unique
+  personalOwner       User?   @relation("PersonalOrganization", fields: [personalOwnerUserId], references: [id], onDelete: SetNull)
+
+  memberships        Membership[]
+  repositories       Repository[]
+  incidents          Incident[]
+  auditEvents        AuditEvent[]
+  idempotencyRecords IdempotencyRecord[]
+  cliCredentials     CliCredential[]
+
+  @@index([status])
+  @@index([kind])
+}
+
+model Membership {
+  id             String         @id @default(cuid())
+  organizationId String
+  userId         String
+  role           MembershipRole @default(member)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model Repository {
+  id             String    @id @default(cuid())
+  organizationId String
+  fingerprint    String
+  displayName    String
+  primaryRemote  String?
+  rootCommitOid  String?
+  missingRemote  Boolean   @default(false)
+  platform       String?
+  lastSeenAt     DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  archivedAt     DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  incidents    Incident[]
+
+  @@unique([organizationId, fingerprint])
+  @@unique([id, organizationId])
+  @@index([organizationId])
+}
+
+model Incident {
+  id             String         @id @default(cuid())
+  organizationId String
+  repositoryId   String
+  createdById    String?
+  title          String?
+  status         IncidentStatus @default(detected)
+  source         IncidentSource @default(cli)
+
+  incidentType  String
+  risk          String?
+  summary       String? @db.Text
+  engineVersion String?
+
+  detectedAt  DateTime  @default(now())
+  triagedAt   DateTime?
+  resolvedAt  DateTime?
+  dismissedAt DateTime?
+
+  legacyGitSessionId String? @unique
+  version            Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization       Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  repository         Repository           @relation(fields: [repositoryId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  createdBy          User?                @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  legacyGitSession   GitSession?          @relation("IncidentLegacySession")
+  snapshots          Snapshot[]
+  analyses           Analysis[]
+  traces             Trace[]
+  recoveryPlans      RecoveryPlanRecord[]
+  verificationRuns   VerificationRun[]
+  auditEvents        AuditEvent[]
+  idempotencyRecords IdempotencyRecord[]
+
+  @@unique([id, organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
+  @@index([repositoryId])
+  @@index([incidentType])
+  @@index([legacyGitSessionId])
+}
+
+model RecoveryPlanRecord {
+  id               String  @id @default(cuid())
+  incidentId       String
+  organizationId   String
+  sourceSnapshotId String
+  version          Int
+  isCurrent        Boolean @default(true)
+
+  signalsJson   Json
+  planJson      Json
+  incidentType  String
+  summary       String? @db.Text
+  risk          String
+  engineVersion String
+  incomplete    Boolean @default(false)
+
+  generatedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  legacyAnalysisId String? @unique
+
+  incident         Incident          @relation(fields: [incidentId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  sourceSnapshot   Snapshot          @relation("PlanSourceSnapshot", fields: [sourceSnapshotId], references: [id], onDelete: Cascade)
+  verificationRuns VerificationRun[]
+  legacyAnalysis   Analysis?         @relation("PlanLegacyAnalysis", fields: [legacyAnalysisId], references: [id], onDelete: SetNull)
+  analysisBridge   Analysis?         @relation("AnalysisPlanBridge")
+
+  @@unique([incidentId, version])
+  @@unique([id, incidentId])
+  @@index([incidentId, isCurrent])
+}
+
+model VerificationRun {
+  id                    String   @id @default(cuid())
+  incidentId            String
+  organizationId        String
+  recoveryPlanRecordId  String
+  afterSnapshotId       String
+  selectedAlternativeId String?
+  status                String
+  resultJson            Json
+  durationMs            Int?
+  createdAt             DateTime @default(now())
+
+  incident           Incident           @relation(fields: [incidentId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  recoveryPlanRecord RecoveryPlanRecord @relation(fields: [recoveryPlanRecordId, incidentId], references: [id, incidentId], onDelete: Cascade)
+  afterSnapshot      Snapshot           @relation(fields: [afterSnapshotId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId, createdAt])
+  @@index([recoveryPlanRecordId])
+}
+
+model AuditEvent {
+  id             String         @id @default(cuid())
+  organizationId String?
+  incidentId     String?
+  actorUserId    String?
+  actorType      AuditActorType @default(system)
+  action         String
+  tier           String         @default("authoritative")
+  payload        Json?
+  userAgent      String?        @db.Text
+  createdAt      DateTime       @default(now())
+
+  legacyTraceId String? @unique
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  incident     Incident?     @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  actor        User?         @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  legacyTrace  Trace?        @relation("TraceAuditEvent")
+
+  @@index([organizationId, createdAt])
+  @@index([incidentId, createdAt])
+  @@index([action])
+}
+
+model IdempotencyRecord {
+  id             String   @id @default(cuid())
+  organizationId String
+  key            String
+  requestHash    String
+  incidentId     String
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  incident     Incident     @relation(fields: [incidentId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@unique([organizationId, key])
+  @@index([expiresAt])
+  @@index([incidentId])
+}
+
+model CliCredential {
+  id             String    @id @default(cuid())
+  organizationId String
+  createdById    String?
+  name           String
+  tokenId        String    @unique
+  tokenHash      String
+  scopes         String[]  @default(["ingest:write"])
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+}
+
+// ============================================
 // LatchOps Application Tables - Git Incident Room
 // ============================================
 
-// Main session for a git incident
 model GitSession {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -97,13 +363,14 @@ model GitSession {
   title        String?
   os           String?
   repoRootHash String?
-  status       String  @default("pending") // pending, analyzing, ready, error
+  status       String  @default("pending")
 
-  // Owner (nullable for anonymous/public uploads)
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  // Relations
+  incidentId String?   @unique
+  incident   Incident? @relation("IncidentLegacySession", fields: [incidentId], references: [id], onDelete: SetNull)
+
   snapshots Snapshot[]
   analyses  Analysis[]
   traces    Trace[]
@@ -113,56 +380,66 @@ model GitSession {
   @@index([status])
 }
 
-// Raw snapshot from CLI
 model Snapshot {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 
-  gitSessionId String
-  gitSession   GitSession @relation(fields: [gitSessionId], references: [id], onDelete: Cascade)
+  gitSessionId String?
+  gitSession   GitSession? @relation(fields: [gitSessionId], references: [id], onDelete: SetNull)
 
-  // Snapshot data stored as JSONB
+  incidentId String?
+  incident   Incident? @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  kind         SnapshotKind @default(capture)
   snapshotJson Json
-  truncated    Boolean @default(false)
+  truncated    Boolean      @default(false)
+  sequence     Int          @default(1)
 
-  // Analysis created from this snapshot
-  analysis Analysis?
+  analysis         Analysis?
+  recoveryPlans    RecoveryPlanRecord[] @relation("PlanSourceSnapshot")
+  verificationRuns VerificationRun[]
+  traces           Trace[]
 
-  // Traces that reference this snapshot
-  traces Trace[]
-
+  @@unique([id, incidentId])
   @@index([gitSessionId])
-  @@index([createdAt])
+  @@index([incidentId, createdAt])
+  @@index([incidentId, sequence])
 }
 
-// Analysis result from analysis service
 model Analysis {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 
-  gitSessionId String
-  gitSession   GitSession @relation(fields: [gitSessionId], references: [id], onDelete: Cascade)
+  gitSessionId String?
+  gitSession   GitSession? @relation(fields: [gitSessionId], references: [id], onDelete: SetNull)
 
-  // Link to source snapshot
+  incidentId String?
+  incident   Incident? @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
   snapshotId String   @unique
   snapshot   Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
 
-  // Issue classification
-  issueType String // merge_conflict, detached_head, rebase_in_progress, clean, unknown
-  summary   String? @db.Text
+  recoveryPlanRecordId String?             @unique
+  recoveryPlanRecord   RecoveryPlanRecord? @relation("AnalysisPlanBridge", fields: [recoveryPlanRecordId], references: [id], onDelete: SetNull)
+  legacyPlanRecord     RecoveryPlanRecord? @relation("PlanLegacyAnalysis")
 
-  // Repo graph for visualization (nodes/edges)
+  issueType     String
+  summary       String? @db.Text
   repoGraphJson Json?
 
-  // Relations
+  signalsJson   Json?
+  planJson      Json?
+  risk          String?
+  engineVersion String?
+
   conflictFiles ConflictFile[]
   planSteps     PlanStep[]
 
   @@index([gitSessionId])
+  @@index([incidentId])
   @@index([issueType])
 }
 
-// Conflict file in a merge conflict
 model ConflictFile {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -171,15 +448,12 @@ model ConflictFile {
   analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
 
   path             String
-  highLevelSummary String? @db.Text
-
-  // Hunks within this file
-  hunks ConflictHunk[]
+  highLevelSummary String?        @db.Text
+  hunks            ConflictHunk[]
 
   @@index([analysisId])
 }
 
-// Individual conflict hunk within a file
 model ConflictHunk {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -187,28 +461,23 @@ model ConflictHunk {
   conflictFileId String
   conflictFile   ConflictFile @relation(fields: [conflictFileId], references: [id], onDelete: Cascade)
 
-  index     Int // Order within the file
+  index     Int
   startLine Int?
   endLine   Int?
 
-  // Three-way content
   baseText   String @db.Text
   oursText   String @db.Text
   theirsText String @db.Text
 
-  // AI analysis
   explanation      String? @db.Text
-  suggestedChoice  String? // ours, theirs, manual, combine
+  suggestedChoice  String?
   suggestedContent String? @db.Text
-
-  // User's choice (for tracking resolution)
-  userChoice  String? // ours, theirs, manual
-  userContent String? @db.Text
+  userChoice       String?
+  userContent      String? @db.Text
 
   @@index([conflictFileId])
 }
 
-// Step in the recovery plan
 model PlanStep {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -218,64 +487,82 @@ model PlanStep {
 
   index       Int
   title       String
-  rationale   String?  @db.Text
-  dangerLevel String   @default("safe") // safe, caution, dangerous
+  rationale   String? @db.Text
+  dangerLevel String  @default("safe")
 
-  // Commands as JSON arrays
-  commandsJson Json // string[]
-  verifyJson   Json // string[] - commands to verify success
-  undoJson     Json // string[] - commands to undo
+  commandsJson Json
+  verifyJson   Json
+  undoJson     Json
 
-  // Execution tracking
-  status       String  @default("pending") // pending, completed, skipped
-  completedAt  DateTime?
-  userConfirmed Boolean @default(false) // For dangerous steps
+  status        String    @default("pending")
+  completedAt   DateTime?
+  userConfirmed Boolean   @default(false)
 
   @@index([analysisId])
   @@index([index])
 }
 
-// Trace for recovery pipeline debugging
 model Trace {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 
-  gitSessionId String
-  gitSession   GitSession @relation(fields: [gitSessionId], references: [id], onDelete: Cascade)
+  gitSessionId String?
+  gitSession   GitSession? @relation(fields: [gitSessionId], references: [id], onDelete: SetNull)
 
-  // recovery engine stage identifier
-  stage String // ingest, analyze, explain, plan, verify
+  incidentId String?
+  incident   Incident? @relation(fields: [incidentId], references: [id], onDelete: SetNull)
 
-  // Reference to input snapshot (optional)
+  stage String
+
   snapshotId String?
   snapshot   Snapshot? @relation(fields: [snapshotId], references: [id], onDelete: SetNull)
 
-  // Input/Output data stored as JSONB
+  auditEventId String?     @unique
+  auditEvent   AuditEvent? @relation("TraceAuditEvent", fields: [auditEventId], references: [id], onDelete: SetNull)
+
   inputJson  Json?
   outputJson Json?
 
-  // Execution metadata
   durationMs   Int?
   success      Boolean @default(true)
   errorMessage String? @db.Text
 
   @@index([gitSessionId])
+  @@index([incidentId])
   @@index([stage])
   @@index([createdAt])
 }
 
-// Event log for audit/analytics
 model Event {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 
-  type         String // session_created, analysis_completed, step_executed, etc.
+  type         String
   userId       String?
   gitSessionId String?
-
-  metadata Json?
+  metadata     Json?
 
   @@index([type])
   @@index([userId])
   @@index([createdAt])
+}
+
+model MigrationBackfillError {
+  id          String   @id @default(cuid())
+  sourceTable String
+  sourceId    String
+  errorCode   String
+  errorDetail String?  @db.Text
+  occurredAt  DateTime @default(now())
+
+  @@index([sourceTable, sourceId])
+  @@index([errorCode])
+}
+
+model MigrationCheckpoint {
+  id                        String    @id
+  lastProcessedGitSessionId String?
+  lastProcessedAt           DateTime?
+  mode                      String
+  statsJson                 Json?
 }

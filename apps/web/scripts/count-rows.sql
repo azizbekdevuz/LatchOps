@@ -1,0 +1,11 @@
+SELECT 'User' AS table_name, COUNT(*)::int AS row_count FROM "User"
+UNION ALL SELECT 'GitSession', COUNT(*)::int FROM "GitSession"
+UNION ALL SELECT 'Snapshot', COUNT(*)::int FROM "Snapshot"
+UNION ALL SELECT 'Analysis', COUNT(*)::int FROM "Analysis"
+UNION ALL SELECT 'PlanStep', COUNT(*)::int FROM "PlanStep"
+UNION ALL SELECT 'ConflictFile', COUNT(*)::int FROM "ConflictFile"
+UNION ALL SELECT 'ConflictHunk', COUNT(*)::int FROM "ConflictHunk"
+UNION ALL SELECT 'Trace', COUNT(*)::int FROM "Trace"
+UNION ALL SELECT 'Event', COUNT(*)::int FROM "Event"
+UNION ALL SELECT 'Organization', COUNT(*)::int FROM "Organization"
+ORDER BY table_name;

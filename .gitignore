@@ -30,6 +30,7 @@ npm-debug.log*
 # Cache
 .turbo/
 .cache/
+.vercel/
 
 # Codetracker - thinktrace
 .codetracker/credentials.json
@@ -50,3 +51,5 @@ __pycache__/
 *.pywz
 *.pyzw
 *.pyzwz
+.vercel
+.env*

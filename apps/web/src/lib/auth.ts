@@ -114,6 +114,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return token;
     },
+    async signIn({ user }) {
+      if (user.id) {
+        const { ensurePersonalOrganization } = await import('./domain/organization-service');
+        await ensurePersonalOrganization(user.id).catch(console.error);
+      }
+      return true;
+    },
   },
 });
 

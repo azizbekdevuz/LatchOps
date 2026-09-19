@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import { Home, History, LogOut, User, Menu, X } from 'lucide-react';
+import { Home, History, LogOut, User, Menu, X, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 
 function LatchMark() {
@@ -56,6 +56,16 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
+            <Link
+              href="/hacksprint"
+              data-active={isActive('/hacksprint')}
+              className={`nav-link flex items-center gap-2 py-1 text-sm font-medium no-underline hover:no-underline transition-colors ${
+                isActive('/hacksprint') ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Proof
+            </Link>
             {isAuthenticated ? (
               <>
                 <Link
@@ -152,6 +162,16 @@ export function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border-color">
             <nav className="flex flex-col gap-1">
+              <Link
+                href="/hacksprint"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg no-underline ${
+                  isActive('/hacksprint') ? 'bg-bg-tertiary text-text-primary' : 'text-text-secondary'
+                }`}
+              >
+                <ShieldCheck className="w-5 h-5" />
+                Proof
+              </Link>
               {isAuthenticated ? (
                 <>
                   <Link

@@ -11,12 +11,11 @@ interface SessionLog {
   title: string | null;
   status: string;
   analysis: {
-    issueType: string;
+    incidentType: string;
     summary: string | null;
   } | null;
   traces: Array<{
     stage: string;
-    outputJson: unknown;
     createdAt: string;
     success: boolean;
   }>;
@@ -54,7 +53,7 @@ export function HistoryPage({ onNavigateToSession }: HistoryPageProps) {
 
   const filteredSessions = sessions.filter(session =>
     (session.title?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
-    (session.analysis?.issueType?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+    (session.analysis?.incidentType?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
     session.createdAt.includes(searchQuery)
   );
 
@@ -73,6 +72,7 @@ export function HistoryPage({ onNavigateToSession }: HistoryPageProps) {
       case 'merge_conflict': return 'Merge Conflict';
       case 'detached_head': return 'Detached HEAD';
       case 'rebase_in_progress': return 'Rebase';
+      case 'dirty_worktree': return 'Uncommitted Changes';
       case 'clean': return 'Clean';
       default: return issueType || 'Unknown';
     }
@@ -99,26 +99,24 @@ export function HistoryPage({ onNavigateToSession }: HistoryPageProps) {
   };
 
   const getTraceSteps = (traces: SessionLog['traces']) => {
-    const stageOrder = ['collector', 'classifier', 'visual_explainer', 'planner', 'verifier'];
+    const stageOrder = [
+      'snapshot_validated',
+      'signals_computed',
+      'incident_classified',
+      'plan_generated',
+      'verification_completed',
+    ];
     const stageLabels: Record<string, string> = {
-      collector: 'Collector',
-      classifier: 'Classifier',
-      visual_explainer: 'Explainer',
-      planner: 'Planner',
-      verifier: 'Verifier',
-    };
-    const stageColors: Record<string, string> = {
-      collector: 'var(--accent-blue)',
-      classifier: 'var(--accent-purple)',
-      visual_explainer: 'var(--accent-yellow)',
-      planner: 'var(--accent-green)',
-      verifier: 'var(--accent-blue)',
+      snapshot_validated: 'Snapshot validated',
+      signals_computed: 'Signals computed',
+      incident_classified: 'Incident classified',
+      plan_generated: 'Plan generated',
+      verification_completed: 'Verification completed',
     };
 
     return stageOrder.map(stage => ({
       stage,
       label: stageLabels[stage] || stage,
-      color: stageColors[stage] || 'var(--text-muted)',
       trace: traces.find(t => t.stage === stage),
     }));
   };
@@ -203,8 +201,8 @@ export function HistoryPage({ onNavigateToSession }: HistoryPageProps) {
                       </span>
                     </div>
                     {session.analysis && (
-                      <Badge variant={getIssueTypeVariant(session.analysis.issueType)}>
-                        {getIssueTypeLabel(session.analysis.issueType)}
+                      <Badge variant={getIssueTypeVariant(session.analysis.incidentType)}>
+                        {getIssueTypeLabel(session.analysis.incidentType)}
                       </Badge>
                     )}
                   </div>
@@ -268,8 +266,8 @@ export function HistoryPage({ onNavigateToSession }: HistoryPageProps) {
                   {formatDate(selectedLog.createdAt)}
                 </div>
                 {selectedLog.analysis && (
-                  <Badge variant={getIssueTypeVariant(selectedLog.analysis.issueType)}>
-                    {getIssueTypeLabel(selectedLog.analysis.issueType)}
+                  <Badge variant={getIssueTypeVariant(selectedLog.analysis.incidentType)}>
+                    {getIssueTypeLabel(selectedLog.analysis.incidentType)}
                   </Badge>
                 )}
                 <Badge variant={getStatusVariant(selectedLog.status)}>
@@ -281,7 +279,7 @@ export function HistoryPage({ onNavigateToSession }: HistoryPageProps) {
             {/* Trace Pipeline */}
             <div className="flex-1 overflow-y-auto p-6">
               <h3 className="text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide mb-4">
-                Agent Pipeline Trace
+                Deterministic Pipeline Trace
               </h3>
               <div className="space-y-4">
                 {getTraceSteps(selectedLog.traces).map((step, index) => (
@@ -310,12 +308,10 @@ export function HistoryPage({ onNavigateToSession }: HistoryPageProps) {
                         )}
                       </div>
                       {step.trace ? (
-                        <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg p-3 overflow-hidden">
-                          <pre className="text-xs text-[var(--text-secondary)] overflow-auto max-h-32">
-                            {JSON.stringify(step.trace.outputJson, null, 2).slice(0, 500)}
-                            {JSON.stringify(step.trace.outputJson, null, 2).length > 500 && '...'}
-                          </pre>
-                        </div>
+                        <p className="text-sm text-[var(--text-secondary)]">
+                          Completed{step.trace.success ? '' : ' (failed)'} at{' '}
+                          {new Date(step.trace.createdAt).toLocaleTimeString()}
+                        </p>
                       ) : (
                         <p className="text-sm text-[var(--text-muted)]">Not executed</p>
                       )}

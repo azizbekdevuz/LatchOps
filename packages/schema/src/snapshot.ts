@@ -111,9 +111,26 @@ export const SnapshotV1Schema = z.object({
   mergeHead: z.string().optional(), // MERGE_HEAD commit if in merge
   mergeMessage: z.string().optional(), // Default merge commit message
 
+  // In-progress sequencer operations (detected from git state files). Optional
+  // and default-false so older persisted snapshots remain valid.
+  cherryPickInProgress: z.boolean().optional(),
+  revertInProgress: z.boolean().optional(),
+  bisectInProgress: z.boolean().optional(),
+
   // Raw outputs for debugging
   rawStatus: z.string(),
   rawBranches: z.string(),
+
+  // Phase 4 optional fingerprint inputs (backward compatible)
+  remotes: z
+    .array(
+      z.object({
+        name: z.string(),
+        url: z.string(),
+      }),
+    )
+    .optional(),
+  rootCommitOid: z.string().nullable().optional(),
 });
 
 export type SnapshotV1 = z.infer<typeof SnapshotV1Schema>;

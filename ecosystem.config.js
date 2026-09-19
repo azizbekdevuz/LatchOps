@@ -1,3 +1,14 @@
+// PM2 process configuration for the LatchOps web app.
+//
+// Secrets are NEVER inlined here. All sensitive values are read from the
+// process environment (populate them via your shell, a systemd EnvironmentFile,
+// a secrets manager, or a git-ignored .env that PM2 loads). Only non-sensitive
+// runtime defaults are set inline.
+//
+// Required environment variables (must be set before `pm2 start`):
+//   - DATABASE_URL     PostgreSQL connection string
+//   - NEXTAUTH_URL     public origin of the deployment
+//   - NEXTAUTH_SECRET  random secret for NextAuth session encryption
 module.exports = {
   apps: [
     {
@@ -10,10 +21,9 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
-        AGENT_URL: 'http://localhost:8000',
-        NEXTAUTH_URL: 'https://yourdomain.com',
-        NEXTAUTH_SECRET: 'change-this-to-random-secret',
-        DATABASE_URL: 'file:./latchops.db',
+        // Sensitive values are intentionally omitted; they are inherited from
+        // the process environment:
+        //   DATABASE_URL, NEXTAUTH_URL, NEXTAUTH_SECRET
       },
       error_file: './logs/web-error.log',
       out_file: './logs/web-out.log',
@@ -22,6 +32,6 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
-    }
-  ]
+    },
+  ],
 };

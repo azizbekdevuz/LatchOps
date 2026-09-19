@@ -1,103 +1,45 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { FileText, Upload, PartyPopper, AlertTriangle, X } from 'lucide-react';
+import { useState } from 'react';
+import { Upload, FileText, PartyPopper, AlertTriangle, X, Loader2 } from 'lucide-react';
+import type { IncidentData, VerificationResultV1 } from '../incident-data';
 
-interface SessionData {
-  id: string;
-  status: string;
-  analysis: {
-    issueType: string;
-    summary: string;
-  } | null;
-}
+const STATUS_STYLES: Record<string, { border: string; label: string }> = {
+  succeeded: { border: 'border-green-500/30 bg-green-500/10', label: 'Succeeded' },
+  in_progress: { border: 'border-yellow-500/30 bg-yellow-500/10', label: 'In Progress' },
+  not_started: { border: 'border-gray-500/30 bg-gray-500/10', label: 'Not Started' },
+  failed: { border: 'border-red-500/30 bg-red-500/10', label: 'Failed' },
+  manual_review: { border: 'border-blue-500/30 bg-blue-500/10', label: 'Manual Review' },
+};
 
-interface VerifyTabProps {
-  sessionData: SessionData;
-}
-
-export default function VerifyTab({ sessionData }: VerifyTabProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+export default function VerifyTab({ data }: { data: IncidentData }) {
+  const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadResult, setUploadResult] = useState<{
-    success: boolean;
-    message: string;
-    comparison?: {
-      previousIssue: string;
-      currentIssue: string;
-      resolved: boolean;
-      remainingIssues: string[];
-    };
-  } | null>(null);
+  const [altId, setAltId] = useState<string>('');
+  const [result, setResult] = useState<VerificationResultV1 | null>(data.verification);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const files = e.dataTransfer.files;
-    if (files.length > 0 && files[0].name.endsWith('.json')) {
-      setUploadedFile(files[0]);
-    }
-  }, []);
-
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      setUploadedFile(files[0]);
-    }
-  }, []);
+  const alternatives = data.plan?.alternatives ?? [];
 
   const handleUpload = async () => {
-    if (!uploadedFile) return;
-
+    if (!file) return;
     setUploading(true);
-    setUploadResult(null);
-
+    setError(null);
     try {
-      const content = await uploadedFile.text();
-      const snapshot = JSON.parse(content);
-
-      // Call the actual API to verify the snapshot
-      const response = await fetch(`/api/sessions/${sessionData.id}/verify`, {
+      const snapshot = JSON.parse(await file.text());
+      const res = await fetch(`/api/sessions/${data.id}/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ snapshot }),
+        body: JSON.stringify({ snapshot, selectedAlternativeId: altId || null }),
       });
-
-      if (!response.ok) {
-        throw new Error(response.statusText || 'Verification failed');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Verification failed');
       }
-
-      const data = await response.json();
-
-      // Transform API response to match component expectations
-      const remainingIssues = Array.isArray(data.remainingIssues) ? data.remainingIssues : [];
-      setUploadResult({
-        success: true,
-        message: 'Snapshot analyzed successfully',
-        comparison: {
-          previousIssue: data.previousIssue || sessionData.analysis?.issueType || 'unknown',
-          currentIssue: data.currentIssue || 'unknown',
-          resolved: data.resolved || false,
-          remainingIssues: remainingIssues,
-        },
-      });
-    } catch (error) {
-      setUploadResult({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to analyze snapshot',
-      });
+      const body = await res.json();
+      setResult(body.verification as VerificationResultV1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to verify snapshot');
     } finally {
       setUploading(false);
     }
@@ -105,88 +47,72 @@ export default function VerifyTab({ sessionData }: VerifyTabProps) {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Instructions */}
       <div className="bg-bg-secondary border border-border-color rounded-lg p-6">
         <h2 className="text-lg font-semibold mb-2">Verify Your Progress</h2>
         <p className="text-text-secondary">
-          After making changes to your repository, upload a new snapshot to verify that the issues
-          have been resolved. Run <code className="px-2 py-1 bg-bg-tertiary rounded">latchops send</code>{' '}
-          in your repository to generate a new snapshot file.
+          After following the recovery plan, capture a fresh snapshot with{' '}
+          <code className="px-2 py-1 bg-bg-tertiary rounded">latchops send</code> (or{' '}
+          <code className="px-2 py-1 bg-bg-tertiary rounded">latchops snapshot</code>) and upload it.
+          Verification compares the before/after signals against the saved plan — deterministically.
         </p>
       </div>
 
-      {/* Current State */}
-      <div className="bg-bg-secondary border border-border-color rounded-lg p-6">
-        <h3 className="text-sm font-medium text-text-muted mb-3">Current Session State</h3>
-        <div className="flex items-center gap-4">
-          <div
-            className={`px-3 py-1.5 rounded-full text-sm font-medium ${
-              sessionData.analysis?.issueType === 'clean'
-                ? 'bg-green-500/20 text-green-400'
-                : sessionData.analysis?.issueType === 'merge_conflict'
-                ? 'bg-yellow-500/20 text-yellow-400'
-                : 'bg-gray-500/20 text-gray-400'
-            }`}
+      {alternatives.length > 0 && (
+        <div className="bg-bg-secondary border border-border-color rounded-lg p-4">
+          <label className="block text-sm font-medium text-text-muted mb-2">
+            Which alternative did you follow?
+          </label>
+          <select
+            value={altId}
+            onChange={(e) => setAltId(e.target.value)}
+            className="w-full bg-bg-primary border border-border-color rounded-md p-2 text-sm"
           >
-            {sessionData.analysis?.issueType?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
-          </div>
-          <span className="text-text-secondary">{sessionData.analysis?.summary}</span>
+            <option value="">(not specified)</option>
+            {alternatives.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.title}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
+      )}
 
-      {/* Upload Zone */}
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-          isDragging
-            ? 'border-accent-blue bg-accent-blue/10'
-            : 'border-border-color hover:border-accent-blue/50'
-        }`}
-      >
-        {uploadedFile ? (
+      <div className="border-2 border-dashed border-border-color rounded-lg p-8 text-center">
+        {file ? (
           <div className="space-y-4">
-            <div className="flex justify-center"><FileText className="w-12 h-12 text-text-muted" /></div>
-            <div>
-              <p className="font-medium">{uploadedFile.name}</p>
-              <p className="text-sm text-text-muted">
-                {(uploadedFile.size / 1024).toFixed(2)} KB
-              </p>
-            </div>
+            <FileText className="w-12 h-12 text-text-muted mx-auto" />
+            <p className="font-medium">{file.name}</p>
             <div className="flex justify-center gap-3">
               <button
-                onClick={() => setUploadedFile(null)}
-                className="px-4 py-2 bg-bg-tertiary border border-border-color rounded-md text-sm font-medium hover:bg-bg-secondary transition-colors"
+                onClick={() => setFile(null)}
+                className="px-4 py-2 bg-bg-tertiary border border-border-color rounded-md text-sm font-medium"
               >
                 Remove
               </button>
               <button
                 onClick={handleUpload}
                 disabled={uploading}
-                className="px-4 py-2 bg-accent-blue hover:bg-accent-blue/80 disabled:opacity-50 rounded-md text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-accent-blue hover:bg-accent-blue/80 disabled:opacity-50 rounded-md text-sm font-medium flex items-center gap-2"
               >
-                {uploading ? 'Analyzing...' : 'Analyze Snapshot'}
+                {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {uploading ? 'Verifying...' : 'Verify Snapshot'}
               </button>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex justify-center"><Upload className="w-12 h-12 text-text-muted" /></div>
-            <div>
-              <p className="font-medium">Drop your snapshot file here</p>
-              <p className="text-sm text-text-muted">or click to browse</p>
-            </div>
+            <Upload className="w-12 h-12 text-text-muted mx-auto" />
+            <p className="font-medium">Upload a new snapshot JSON</p>
             <input
               type="file"
               accept=".json"
-              onChange={handleFileSelect}
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               className="hidden"
-              id="snapshot-upload"
+              id="verify-upload"
             />
             <label
-              htmlFor="snapshot-upload"
-              className="inline-block px-4 py-2 bg-bg-tertiary border border-border-color rounded-md text-sm font-medium hover:bg-bg-secondary transition-colors cursor-pointer"
+              htmlFor="verify-upload"
+              className="inline-block px-4 py-2 bg-bg-tertiary border border-border-color rounded-md text-sm font-medium cursor-pointer"
             >
               Select File
             </label>
@@ -194,102 +120,78 @@ export default function VerifyTab({ sessionData }: VerifyTabProps) {
         )}
       </div>
 
-      {/* Results */}
-      {uploadResult && (
-        <div
-          className={`border rounded-lg p-6 ${
-            uploadResult.success
-              ? uploadResult.comparison?.resolved
-                ? 'border-green-500/30 bg-green-500/10'
-                : 'border-yellow-500/30 bg-yellow-500/10'
-              : 'border-red-500/30 bg-red-500/10'
-          }`}
-        >
-          {uploadResult.success && uploadResult.comparison ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                {uploadResult.comparison.resolved ? (
-                  <PartyPopper className="w-8 h-8 text-green-500" />
-                ) : (
-                  <AlertTriangle className="w-8 h-8 text-yellow-500" />
-                )}
-                <div>
-                  <h3 className="text-lg font-semibold">
-                    {uploadResult.comparison.resolved
-                      ? 'Issues Resolved!'
-                      : 'Some Issues Remain'}
-                  </h3>
-                  <p className="text-text-secondary">
-                    {uploadResult.comparison.resolved
-                      ? 'Your repository is now in a clean state.'
-                      : `${uploadResult.comparison.remainingIssues?.length || 0} issue(s) still need attention.`}
-                  </p>
-                </div>
-              </div>
-
-              {/* Comparison */}
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border-color">
-                <div className="text-center p-4 bg-bg-secondary rounded-lg">
-                  <div className="text-sm text-text-muted mb-1">Previous State</div>
-                  <div className="font-medium text-yellow-400">
-                    {uploadResult.comparison.previousIssue.replace('_', ' ').toUpperCase()}
-                  </div>
-                </div>
-                <div className="text-center p-4 bg-bg-secondary rounded-lg">
-                  <div className="text-sm text-text-muted mb-1">Current State</div>
-                  <div
-                    className={`font-medium ${
-                      uploadResult.comparison.currentIssue === 'clean'
-                        ? 'text-green-400'
-                        : 'text-yellow-400'
-                    }`}
-                  >
-                    {uploadResult.comparison.currentIssue.replace('_', ' ').toUpperCase()}
-                  </div>
-                </div>
-              </div>
-
-              {/* Remaining Issues */}
-              {uploadResult.comparison.remainingIssues && uploadResult.comparison.remainingIssues.length > 0 && (
-                <div className="pt-4 border-t border-border-color">
-                  <h4 className="text-sm font-medium text-text-muted mb-2">Remaining Issues</h4>
-                  <ul className="space-y-1">
-                    {uploadResult.comparison.remainingIssues.map((issue, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm">
-                        <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                        <span className="font-mono">{issue}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <X className="w-8 h-8 text-red-400" />
-              <div>
-                <h3 className="text-lg font-semibold text-red-400">Analysis Failed</h3>
-                <p className="text-text-secondary">{uploadResult.message}</p>
-              </div>
-            </div>
-          )}
+      {error && (
+        <div className="border border-red-500/30 bg-red-500/10 rounded-lg p-4 flex items-center gap-3">
+          <X className="w-6 h-6 text-red-400" />
+          <p className="text-text-secondary">{error}</p>
         </div>
       )}
 
-      {/* CLI Instructions */}
-      <div className="bg-bg-secondary border border-border-color rounded-lg p-6">
-        <h3 className="text-sm font-medium text-text-muted mb-3">Generate a New Snapshot</h3>
-        <div className="bg-bg-primary rounded-lg p-4 font-mono text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-text-muted">$</span>
-            <code>latchops send</code>
+      {result && <VerificationResultView result={result} />}
+    </div>
+  );
+}
+
+function VerificationResultView({ result }: { result: VerificationResultV1 }) {
+  const style = STATUS_STYLES[result.status] ?? STATUS_STYLES.manual_review;
+  const succeeded = result.status === 'succeeded';
+
+  return (
+    <div className={`border rounded-lg p-6 space-y-4 ${style.border}`}>
+      <div className="flex items-center gap-3">
+        {succeeded ? (
+          <PartyPopper className="w-8 h-8 text-green-500" />
+        ) : (
+          <AlertTriangle className="w-8 h-8 text-yellow-500" />
+        )}
+        <div>
+          <h3 className="text-lg font-semibold">{style.label}</h3>
+          <p className="text-sm text-text-muted capitalize">
+            {result.beforeState.replace(/_/g, ' ')} → {result.afterState.replace(/_/g, ' ')}
+          </p>
+        </div>
+      </div>
+
+      {result.reasons.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium text-text-muted mb-1">Reasons</h4>
+          <ul className="space-y-1">
+            {result.reasons.map((r, i) => (
+              <li key={i} className="text-sm text-text-secondary">• {r}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {result.changedSignals.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium text-text-muted mb-1">Changed signals</h4>
+          <div className="space-y-1 font-mono text-xs">
+            {result.changedSignals.map((c, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="text-text-muted">{c.field}</span>
+                <span className="text-red-400">{JSON.stringify(c.before)}</span>
+                <span className="text-text-muted">→</span>
+                <span className="text-green-400">{JSON.stringify(c.after)}</span>
+              </div>
+            ))}
           </div>
         </div>
-        <p className="text-sm text-text-muted mt-3">
-          Run this command in your repository to capture the current state and upload it for
-          verification.
-        </p>
-      </div>
+      )}
+
+      {result.remainingIssues.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium text-text-muted mb-1">Remaining</h4>
+          <ul className="space-y-1">
+            {result.remainingIssues.map((r, i) => (
+              <li key={i} className="flex items-center gap-2 text-sm">
+                <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                <span>{r}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,7 +7,7 @@ export default function History() {
   const router = useRouter();
 
   const handleNavigateToSession = (id: string) => {
-    router.push(`/session/${id}`);
+    router.push(`/incident/${id}`);
   };
 
   return (

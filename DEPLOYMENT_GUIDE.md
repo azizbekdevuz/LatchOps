@@ -1,8 +1,10 @@
 ﻿# LatchOps deployment guide
 
-Deploy the LatchOps monorepo to a Linux VPS with Nginx, PM2 (web), and an optional systemd-managed Python analysis service. Replace every `yourdomain.com` and placeholder secret with your own values.
+Deploy the LatchOps monorepo to a Linux VPS with Nginx and PM2. LatchOps analysis is fully deterministic and runs **in-process** inside the Next.js app (`@latchops/state-engine` + `@latchops/recovery-engine`) — there is no separate analysis service to deploy. Replace every `yourdomain.com` and placeholder secret with your own values.
 
 This guide assumes you already built and tested locally (`pnpm install`, `pnpm build`).
+
+Secrets are provided via **environment variables only** — never commit them to `ecosystem.config.js` or any tracked file.
 
 ---
 
@@ -11,6 +13,7 @@ This guide assumes you already built and tested locally (`pnpm install`, `pnpm b
 - VPS with Ubuntu or Debian
 - Domain name with DNS access
 - SSH access to the VPS
+- A PostgreSQL database (managed or self-hosted)
 - Basic shell familiarity
 
 ---
@@ -19,10 +22,9 @@ This guide assumes you already built and tested locally (`pnpm install`, `pnpm b
 
 You will deploy:
 
-1. **Next.js web app** (port 3000) — PM2
-2. **Python analysis service** (port 8000) — optional, systemd
-3. **Nginx** (ports 80/443) — reverse proxy
-4. **Database** — per `DATABASE_URL` in `apps/web` (PostgreSQL recommended for production; SQLite possible for small setups)
+1. **Next.js web app** (port 3000) — PM2 (runs the deterministic engines in-process)
+2. **Nginx** (ports 80/443) — reverse proxy
+3. **Database** — PostgreSQL, per `DATABASE_URL` in `apps/web`
 
 Services should be enabled to start on boot.
 
@@ -78,9 +80,6 @@ sudo apt update && sudo apt upgrade -y
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 
-# Python
-sudo apt install -y python3 python3-pip python3-venv python3-dev
-
 # Nginx, Git, build tools
 sudo apt install -y nginx git build-essential
 
@@ -88,7 +87,6 @@ sudo apt install -y nginx git build-essential
 sudo npm install -g pnpm pm2
 
 node --version
-python3 --version
 nginx -v
 pm2 --version
 pnpm --version
@@ -114,10 +112,10 @@ cd /var/www/latchops
 git clone https://github.com/YOUR_USERNAME/latchops.git .
 ```
 
-**SCP from your machine**
+**rsync from your machine**
 
 ```bash
-rsync -avz --exclude node_modules --exclude .git --exclude venv \
+rsync -avz --exclude node_modules --exclude .git \
   . user@YOUR_VPS_IP:/var/www/latchops/
 ```
 
@@ -131,81 +129,9 @@ pnpm build
 
 ---
 
-## Step 4: Python analysis service (optional)
+## Step 4: Next.js web app
 
-### 4.1 Virtual environment
-
-```bash
-cd /var/www/latchops/apps/agent
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-### 4.2 Environment file
-
-```bash
-nano .env
-```
-
-```bash
-ANTHROPIC_API_KEY=your-key-here
-MODEL_NAME=claude-sonnet-4-20250514
-PORT=8000
-HOST=0.0.0.0
-LOG_LEVEL=INFO
-```
-
-### 4.3 Test run
-
-```bash
-source venv/bin/activate
-python main.py
-# Expect: Uvicorn on http://0.0.0.0:8000
-# Ctrl+C to stop before enabling systemd
-```
-
-### 4.4 Systemd unit
-
-Copy `apps/agent/latchops-agent.service` or create `/etc/systemd/system/latchops-agent.service`:
-
-```ini
-[Unit]
-Description=LatchOps analysis service
-After=network.target
-
-[Service]
-Type=simple
-User=www-data
-Group=www-data
-WorkingDirectory=/var/www/latchops/apps/agent
-Environment="PATH=/var/www/latchops/apps/agent/venv/bin:/usr/local/bin:/usr/bin:/bin"
-EnvironmentFile=/var/www/latchops/apps/agent/.env
-ExecStart=/var/www/latchops/apps/agent/venv/bin/python main.py
-Restart=always
-RestartSec=10
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=latchops-agent
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable latchops-agent
-sudo systemctl start latchops-agent
-sudo systemctl status latchops-agent
-sudo journalctl -u latchops-agent -f
-```
-
----
-
-## Step 5: Next.js web app
-
-### 5.1 Environment
+### 4.1 Environment
 
 ```bash
 cd /var/www/latchops/apps/web
@@ -216,8 +142,6 @@ nano .env.local
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/latchops"
 NEXTAUTH_URL="https://yourdomain.com"
 NEXTAUTH_SECRET="generate-with-openssl-rand-base64-32"
-AGENT_URL="http://localhost:8000"
-ANTHROPIC_API_KEY=""
 NODE_ENV="production"
 ```
 
@@ -227,7 +151,9 @@ Generate a secret:
 openssl rand -base64 32
 ```
 
-### 5.2 Database
+No API keys are required — analysis is deterministic and local to the app.
+
+### 4.2 Database
 
 ```bash
 cd /var/www/latchops/apps/web
@@ -236,11 +162,17 @@ pnpm exec prisma db push
 # or: pnpm exec prisma migrate deploy
 ```
 
-### 5.3 PM2
+The Phase 3 canonical fields (`Analysis.signalsJson`, `Analysis.planJson`, `Analysis.risk`, `Analysis.engineVersion`) are additive and nullable; `db push` applies them without data loss. See `apps/web/prisma/manual-migrations/` for the equivalent DDL.
 
-Edit `/var/www/latchops/ecosystem.config.js` with your domain and secrets, then:
+### 4.3 PM2
+
+`ecosystem.config.js` contains **no secrets**. Export the required environment variables (or use a git-ignored env file / systemd `EnvironmentFile` / secrets manager) before starting:
 
 ```bash
+export DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/latchops"
+export NEXTAUTH_URL="https://yourdomain.com"
+export NEXTAUTH_SECRET="$(openssl rand -base64 32)"
+
 sudo mkdir -p /var/log/latchops
 sudo chown -R $USER:$USER /var/log/latchops
 
@@ -255,7 +187,7 @@ pm2 logs latchops-web
 
 ---
 
-## Step 6: Nginx reverse proxy
+## Step 5: Nginx reverse proxy
 
 ```bash
 sudo nano /etc/nginx/sites-available/latchops
@@ -295,11 +227,11 @@ sudo systemctl enable nginx
 sudo systemctl restart nginx
 ```
 
-Do not expose ports 3000 or 8000 publicly; only 80/443 via Nginx.
+Do not expose port 3000 publicly; only 80/443 via Nginx.
 
 ---
 
-## Step 7: SSL (recommended)
+## Step 6: SSL (recommended)
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
@@ -309,7 +241,7 @@ sudo certbot renew --dry-run
 
 ---
 
-## Step 8: Firewall
+## Step 7: Firewall
 
 ```bash
 sudo ufw allow 22/tcp
@@ -321,12 +253,9 @@ sudo ufw status
 
 ---
 
-## Step 9: Verify
+## Step 8: Verify
 
 ```bash
-sudo systemctl status latchops-agent   # if using agent
-curl http://localhost:8000/health
-
 pm2 status
 curl -I http://localhost:3000
 
@@ -343,15 +272,13 @@ pnpm cli send -u https://yourdomain.com
 
 ---
 
-## Step 10: Boot persistence
+## Step 9: Boot persistence
 
 ```bash
 sudo reboot
 # after reconnect:
-sudo systemctl status latchops-agent
 pm2 status
 sudo systemctl status nginx
-sudo systemctl is-enabled latchops-agent
 sudo systemctl is-enabled nginx
 ```
 
@@ -362,7 +289,6 @@ sudo systemctl is-enabled nginx
 ### Logs
 
 ```bash
-sudo journalctl -u latchops-agent -f
 pm2 logs latchops-web
 sudo tail -f /var/log/nginx/error.log
 ```
@@ -370,7 +296,6 @@ sudo tail -f /var/log/nginx/error.log
 ### Restart
 
 ```bash
-sudo systemctl restart latchops-agent
 pm2 restart latchops-web
 sudo systemctl restart nginx
 ```
@@ -383,7 +308,6 @@ git pull
 pnpm install
 pnpm build
 pm2 restart latchops-web
-sudo systemctl restart latchops-agent
 ```
 
 ---
@@ -393,7 +317,6 @@ sudo systemctl restart latchops-agent
 **Service will not start**
 
 ```bash
-sudo journalctl -u latchops-agent -n 50
 pm2 logs latchops-web --err
 ls -la /var/www/latchops
 ```
@@ -402,14 +325,12 @@ ls -la /var/www/latchops
 
 ```bash
 sudo lsof -i :3000
-sudo lsof -i :8000
 ```
 
 **Nginx 502**
 
 ```bash
 pm2 status
-sudo systemctl status latchops-agent
 sudo nginx -t
 sudo systemctl restart nginx
 ```
@@ -433,31 +354,27 @@ dig yourdomain.com +short
 
 | Service | Status | Logs |
 |---------|--------|------|
-| Python agent | `sudo systemctl status latchops-agent` | `sudo journalctl -u latchops-agent -f` |
 | Web | `pm2 status` | `pm2 logs latchops-web` |
 | Nginx | `sudo systemctl status nginx` | `/var/log/nginx/error.log` |
 
 **Paths**
 
 - Code: `/var/www/latchops`
-- Agent: `/var/www/latchops/apps/agent`
 - Web: `/var/www/latchops/apps/web`
-- Agent env: `/var/www/latchops/apps/agent/.env`
 - Web env: `/var/www/latchops/apps/web/.env.local`
 - Nginx: `/etc/nginx/sites-available/latchops`
-- Systemd: `/etc/systemd/system/latchops-agent.service`
 
 ---
 
 ## Checklist
 
 - [ ] DNS A records point to VPS IP
-- [ ] Node, Python, Nginx, pnpm, PM2 installed
+- [ ] Node, Nginx, pnpm, PM2 installed
 - [ ] `pnpm install` and `pnpm build` succeeded on VPS
-- [ ] Web `.env.local` and agent `.env` configured
+- [ ] Web `.env.local` configured (no secrets in tracked files)
+- [ ] Required env vars exported before `pm2 start`
 - [ ] Prisma schema applied
 - [ ] PM2 running `latchops-web`
-- [ ] Optional: `latchops-agent` active
 - [ ] Nginx proxying to port 3000
 - [ ] SSL configured (recommended)
 - [ ] UFW allows 22, 80, 443 only
@@ -468,6 +385,5 @@ dig yourdomain.com +short
 ## Additional resources
 
 - [PM2 documentation](https://pm2.keymetrics.io/)
-- [systemd.service man page](https://www.freedesktop.org/software/systemd/man/systemd.service.html)
 - [Nginx documentation](https://nginx.org/en/docs/)
 - [Certbot](https://certbot.eff.org/)
