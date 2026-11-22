@@ -19,6 +19,7 @@ import {
   Terminal,
   XCircle,
 } from 'lucide-react';
+import { KNOWLEDGE_BASE } from '@/lib/review/knowledge';
 import type { ReviewDetail } from '@/lib/review/service';
 import type { ExplanationOutput } from '@/lib/review/types';
 import type { PublicActor, ReviewMeta } from '../shared';
@@ -130,6 +131,38 @@ export function EvidencePanel({ detail, highlight }: { detail: ReviewDetail; hig
               <span className="text-text-primary">{item.label}</span>
             </div>
             <pre className="!p-2 !mt-2 !text-[11px] whitespace-pre-wrap break-words !bg-bg-secondary">{item.text}</pre>
+          </li>
+        ))}
+      </ol>
+    </Panel>
+  );
+}
+
+export function RunbookPanel({ highlight }: { highlight: string | null }) {
+  return (
+    <Panel
+      id="runbook"
+      title="Local runbook"
+      icon={<BookOpen className="w-4 h-4 text-accent-purple" />}
+      aside={<span className="text-[11px] text-text-muted">K# citations open here</span>}
+    >
+      <ol className="space-y-2">
+        {KNOWLEDGE_BASE.map((chunk) => (
+          <li
+            key={chunk.id}
+            id={`kb-${chunk.id}`}
+            className={`rounded-lg border bg-bg-primary/60 p-3 ${
+              highlight === chunk.id ? 'border-accent-green shadow-[0_0_0_2px_rgba(52,224,161,0.25)]' : 'border-border-color'
+            }`}
+          >
+            <div className="flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="font-mono font-semibold text-accent-green">{chunk.id}</span>
+              <span className="text-text-primary">{chunk.title}</span>
+            </div>
+            <p className="text-xs text-text-secondary mt-1.5 whitespace-pre-wrap">{chunk.text}</p>
+            <p className="text-[10px] text-text-muted font-mono mt-1 truncate" title={chunk.reference}>
+              {chunk.reference}
+            </p>
           </li>
         ))}
       </ol>
@@ -278,7 +311,7 @@ export function ExplanationPanel({
                         <button
                           key={cite}
                           type="button"
-                          onClick={() => cite.startsWith('E') && onCite(cite)}
+                          onClick={() => onCite(cite)}
                           className="flex items-center gap-1 rounded border border-border-strong px-1.5 py-0.5 font-mono text-[10px] text-accent-green hover:bg-bg-tertiary"
                           title={cite.startsWith('K') ? 'runbook chunk' : 'show evidence'}
                         >

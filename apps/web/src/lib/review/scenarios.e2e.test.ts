@@ -8,7 +8,7 @@ import { groundedResponse } from './fixture-responses';
 import { fixtureProvider } from './llm';
 import { RUNNER_ACTORS, runScenario } from './scenario-runner';
 import { REVIEW_SCENARIOS } from './scenarios';
-import { createScenarioReview, executeReview, getReview, importCliSnapshot, ReviewError } from './service';
+import { createScenarioReview, executeReview, getReview, importCliSnapshot, recordDecision, ReviewError } from './service';
 import { builtInBrokenSnapshot } from '@/lib/isolation/demo-scenario';
 
 let dir: string;
@@ -81,6 +81,43 @@ describe('explanations through the service', () => {
 });
 
 describe('security regressions', () => {
+  it('two simultaneous executions reserve the approval once', async () => {
+    const incidentId = await createScenarioReview(RUNNER_ACTORS.requester, 'S01');
+    await recordDecision(RUNNER_ACTORS.approver, incidentId, {
+      decision: 'approve',
+      alternativeId: 'complete_merge',
+      reason: 'Keep the production contract from the evidence',
+    });
+    const [left, right] = await Promise.all([
+      executeReview(RUNNER_ACTORS.requester, incidentId),
+      executeReview(RUNNER_ACTORS.requester, incidentId),
+    ]);
+    expect([left, right].filter((result) => result.authorized)).toHaveLength(1);
+    const review = await getReview(incidentId);
+    expect(review.executions.filter((row) => row.authorized)).toHaveLength(1);
+    expect(review.incident.status).toBe('executed');
+  }, 180_000);
+
+  it('releases the reservation when isolation fails before any command', async () => {
+    const incidentId = await createScenarioReview(RUNNER_ACTORS.requester, 'S01');
+    await recordDecision(RUNNER_ACTORS.approver, incidentId, {
+      decision: 'approve',
+      alternativeId: 'complete_merge',
+      reason: 'Keep the production contract from the evidence',
+    });
+    await expect(
+      executeReview(RUNNER_ACTORS.requester, incidentId, {
+        beforeIsolate: async () => {
+          throw new Error('disk gone');
+        },
+      }),
+    ).rejects.toThrow(/disk gone/);
+    const review = await getReview(incidentId);
+    expect(review.incident.status).not.toBe('executing');
+    expect(review.executions.filter((row) => row.authorized)).toHaveLength(0);
+    expect(review.audit.some((event) => event.action === 'execution.failed')).toBe(true);
+  }, 60_000);
+
   it('an approval can be used only once', async () => {
     const scenario = REVIEW_SCENARIOS.find((s) => s.id === 'S01')!;
     const first = await runScenario(scenario, { provider: null });

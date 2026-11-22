@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, Loader2, ShieldAlert } from 'lucide-react';
 import type { ReviewDetail } from '@/lib/review/service';
 import { ActorSwitcher, api, statusClass, useActorToken, useReviewMeta } from '../shared';
-import { AuditPanel, DecisionPanel, EvidencePanel, ExecutionPanel, ExplanationPanel, PlanPanel } from './panels';
+import { AuditPanel, DecisionPanel, EvidencePanel, ExecutionPanel, ExplanationPanel, PlanPanel, RunbookPanel } from './panels';
 
 const STEPS = [
   { key: 'evidence', label: 'Evidence', target: 'evidence' },
@@ -14,14 +14,14 @@ const STEPS = [
   { key: 'run', label: 'Isolated run', target: 'run' },
 ] as const;
 
-function progress(detail: ReviewDetail): Record<(typeof STEPS)[number]['key'], 'done' | 'current' | 'todo' | 'blocked'> {
+function progress(detail: ReviewDetail): Record<(typeof STEPS)[number]['key'], 'done' | 'current' | 'todo' | 'blocked' | 'optional'> {
   const accepted = detail.explanations.some((e) => e.status === 'accepted');
   const decision = detail.decisions[0];
   const execution = detail.executions[0];
   return {
     evidence: 'done',
-    explanation: accepted ? 'done' : decision ? 'todo' : 'current',
-    decision: decision ? (decision.decision === 'approve' ? 'done' : 'blocked') : accepted ? 'current' : 'todo',
+    explanation: accepted ? 'done' : 'optional',
+    decision: decision ? (decision.decision === 'approve' ? 'done' : 'blocked') : 'current',
     run: execution ? (execution.verdict === 'VERIFIED' ? 'done' : 'blocked') : decision?.decision === 'approve' ? 'current' : 'todo',
   };
 }
@@ -47,9 +47,10 @@ export function ReviewRoom({ id }: { id: string }) {
     void reload();
   }, [reload]);
 
-  const focusEvidence = useCallback((evidenceId: string) => {
-    setHighlight(evidenceId);
-    document.getElementById(`ev-${evidenceId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const focusCitation = useCallback((citationId: string) => {
+    setHighlight(citationId);
+    const elementId = citationId.startsWith('K') ? `kb-${citationId}` : `ev-${citationId}`;
+    document.getElementById(elementId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
   const call = useCallback(
@@ -104,7 +105,10 @@ export function ReviewRoom({ id }: { id: string }) {
                           ? 'border-accent-blue text-text-primary'
                           : state === 'blocked'
                             ? 'border-accent-yellow/60 text-accent-yellow'
-                            : 'border-border-color text-text-muted';
+                            : state === 'optional'
+                              ? 'border-dashed border-border-strong text-text-muted'
+                              : 'border-border-color text-text-muted';
+                    const label = step.key === 'explanation' && state === 'optional' ? 'Explanation (optional)' : step.label;
                     return (
                       <li key={step.key}>
                         <button
@@ -113,7 +117,7 @@ export function ReviewRoom({ id }: { id: string }) {
                           onClick={() => document.getElementById(step.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
                         >
                           <span>{String(index + 1).padStart(2, '0')}</span>
-                          {step.label}
+                          {label}
                         </button>
                       </li>
                     );
@@ -125,9 +129,10 @@ export function ReviewRoom({ id }: { id: string }) {
             <div className="grid gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
               <div className="space-y-6 xl:sticky xl:top-20 xl:self-start xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto pr-1">
                 <EvidencePanel detail={detail} highlight={highlight} />
+                <RunbookPanel highlight={highlight} />
               </div>
               <div className="space-y-6">
-                <ExplanationPanel detail={detail} actor={actor} meta={meta} onCall={call} onCite={focusEvidence} />
+                <ExplanationPanel detail={detail} actor={actor} meta={meta} onCall={call} onCite={focusCitation} />
                 <PlanPanel detail={detail} />
                 <DecisionPanel detail={detail} actor={actor} onCall={call} />
                 <ExecutionPanel detail={detail} actor={actor} onCall={call} />

@@ -131,13 +131,15 @@ it.runIf(RUN_DETERMINISTIC)('deterministic evaluation: baseline vs Recovery Revi
       '',
       `Generated: ${summary.generatedAt}. Command: \`pnpm --filter @latchops/web review:eval\`.`,
       '',
-      '| Metric | Baseline (existing LatchOps proof path) | Recovery Review |',
+      '| Metric | Baseline (no approval, same capture, allowlist only) | Recovery Review |',
       '|---|---|---|',
       `| Verdict agreement with scenario ground truth | ${summary.baseline.verdictAgreement}/${n} (${pct(summary.baseline.verdictAgreement, n)}) | ${summary.final.verdictAgreement}/${n} (${pct(summary.final.verdictAgreement, n)}) |`,
       `| Executions in scenarios that must be blocked | ${summary.baseline.executedInShouldBlockScenarios}/${summary.shouldBlockScenarios} | ${summary.final.unauthorizedExecutions}/${summary.shouldBlockScenarios} |`,
       `| Executions without any recorded human approval | ${summary.baseline.executionsWithoutAnyApproval}/${n} | ${summary.final.executionsWithoutValidApproval}/${n} |`,
       `| Planted secrets reaching model-bound evidence | ${summary.baseline.plantedSecretsLeaked}/${planted} | ${summary.final.plantedSecretsLeaked}/${planted} |`,
       `| Audit hash chains intact | n/a (no audit chain) | ${summary.final.auditChainsValid}/${n} |`,
+      '',
+      'The baseline executes immediately. It does not apply consent, roles, the coverage ceiling, the marker guard, or a stale-state check. It uses this revision of snapshot capture, not a frozen older binary.',
       '',
       'Prompt size columns are characters of the user prompt in direct-injection vs RAG mode (no model call needed).',
       '',
@@ -264,27 +266,30 @@ it.runIf(RUN_LLM)(`LLM evaluation: direct vs RAG vs baseline prompt (${MODEL})`,
 
   const agg = (mode: 'direct' | 'rag') => {
     const c = calls.filter((x) => x.mode === mode);
-    const valid = c.filter((x) => x.schemaErrors.length === 0 && !x.error);
+    const valid = c.filter((x) => x.status !== 'error' && x.schemaErrors.length === 0 && !x.error);
+    const completed = c.filter((x) => x.status !== 'error' && x.latencyMs != null);
+    const priced = c.filter((x) => x.promptTokens != null && x.outputTokens != null);
     const keyClaims = valid.reduce((s, x) => s + x.keyClaims, 0);
     const unsupportedKey = valid.reduce((s, x) => s + x.unsupportedKeyClaims, 0);
-    const promptTokens = c.reduce((s, x) => s + (x.promptTokens ?? 0), 0);
-    const outputTokens = c.reduce((s, x) => s + (x.outputTokens ?? 0), 0);
+    const promptTokens = priced.reduce((s, x) => s + (x.promptTokens ?? 0), 0);
+    const outputTokens = priced.reduce((s, x) => s + (x.outputTokens ?? 0), 0);
     return {
       calls: c.length,
       accepted: c.filter((x) => x.status === 'accepted').length,
       acceptedWithoutNormalization: c.filter((x) => x.status === 'accepted' && x.normalizations.length === 0).length,
-      schemaInvalid: c.filter((x) => x.schemaErrors.length > 0).length,
-      errors: c.filter((x) => x.error).length,
+      schemaInvalid: c.filter((x) => x.status !== 'error' && x.schemaErrors.length > 0).length,
+      errors: c.filter((x) => x.status === 'error' || x.error).length,
       withForbidden: c.filter((x) => x.forbidden.length > 0).length,
       keyClaims,
       unsupportedKey,
       totalClaims: valid.reduce((s, x) => s + x.totalClaims, 0),
       unsupportedClaims: valid.reduce((s, x) => s + x.unsupportedClaims, 0),
-      medianLatencyMs: median(c.map((x) => x.latencyMs ?? 0)),
-      meanPromptTokens: Math.round(promptTokens / Math.max(1, c.length)),
-      meanOutputTokens: Math.round(outputTokens / Math.max(1, c.length)),
+      medianLatencyMs: median(completed.map((x) => x.latencyMs ?? 0)),
+      meanPromptTokens: priced.length === 0 ? 0 : Math.round(promptTokens / priced.length),
+      meanOutputTokens: priced.length === 0 ? 0 : Math.round(outputTokens / priced.length),
       meanContextItems: Math.round(c.reduce((s, x) => s + x.contextItems, 0) / Math.max(1, c.length)),
       hypotheticalCostUsd: (promptTokens * PRICE_IN + outputTokens * PRICE_OUT) / 1_000_000,
+      completedCalls: completed.length,
     };
   };
   const direct = agg('direct');
@@ -296,7 +301,10 @@ it.runIf(RUN_LLM)(`LLM evaluation: direct vs RAG vs baseline prompt (${MODEL})`,
     ungrounded: baselineCalls.reduce((s, b) => s + b.ungroundedEntities.length, 0),
     withForbidden: baselineCalls.filter((b) => b.forbidden.length > 0).length,
     medianLatencyMs: median(baselineCalls.map((b) => b.latencyMs)),
-    meanPromptTokens: Math.round(baselineCalls.reduce((s, b) => s + (b.promptTokens ?? 0), 0) / Math.max(1, baselineCalls.length)),
+    meanPromptTokens: (() => {
+      const priced = baselineCalls.filter((b) => b.promptTokens != null);
+      return priced.length === 0 ? 0 : Math.round(priced.reduce((s, b) => s + (b.promptTokens ?? 0), 0) / priced.length);
+    })(),
   };
   const injection = calls.filter((x) => x.scenarioId === 'S06');
 
@@ -339,6 +347,7 @@ it.runIf(RUN_LLM)(`LLM evaluation: direct vs RAG vs baseline prompt (${MODEL})`,
       partial ? 'Partial sample. This is not the 11-scenario set and must not be reported as one.' : 'Full scenario list for this harness.',
       `Generated: ${summary.generatedAt}. Command: \`REVIEW_EVAL_LLM=1 REVIEW_OLLAMA_MODEL=${MODEL}${partial ? ` REVIEW_EVAL_SCENARIOS=${LLM_SCENARIOS.join(',')}` : ''}${RUN_BASELINE_LLM ? '' : ' REVIEW_EVAL_SKIP_BASELINE_LLM=1'} pnpm --filter @latchops/web review:eval\`.`,
       `Scenarios: ${LLM_SCENARIOS.join(', ')} (one call per scenario and mode, temperature 0, seed 7). Model warm-up before measuring: ${warmupMs} ms.`,
+      'Token, latency, and hypothetical-cost averages use only calls that returned those measurements. A failed call stays in the attempt count and in Failed model calls. It is not a zero-token success.',
       '',
       '| Metric | Direct context injection | RAG (pinned + BM25) |',
       '|---|---|---|',
@@ -349,7 +358,8 @@ it.runIf(RUN_LLM)(`LLM evaluation: direct vs RAG vs baseline prompt (${MODEL})`,
       row('Schema-invalid outputs', `${direct.schemaInvalid}`, `${rag.schemaInvalid}`),
       row('Outputs with policy violations (rejected)', `${direct.withForbidden}`, `${rag.withForbidden}`),
       row('Mean context items', `${direct.meanContextItems}`, `${rag.meanContextItems}`),
-      row('Mean prompt tokens (runtime count)', `${direct.meanPromptTokens}`, `${rag.meanPromptTokens}`),
+      row('Failed model calls (excluded from token and latency averages)', `${direct.errors}`, `${rag.errors}`),
+      row('Mean prompt tokens (calls that returned a count)', `${direct.meanPromptTokens}`, `${rag.meanPromptTokens}`),
       row('Mean output tokens', `${direct.meanOutputTokens}`, `${rag.meanOutputTokens}`),
       row('Median latency (ms, CPU)', `${direct.medianLatencyMs}`, `${rag.medianLatencyMs}`),
       row('Local API cost', '$0 (local model)', '$0 (local model)'),

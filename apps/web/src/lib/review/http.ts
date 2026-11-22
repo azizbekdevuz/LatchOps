@@ -8,7 +8,11 @@ export const ACTOR_HEADER = 'x-review-actor';
 const MAX_BODY = 2 * 1024 * 1024;
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
 
-/** Recovery Review is local-only unless explicitly opened up. */
+/**
+ * Extra check for a forged Host header. It is not the security boundary:
+ * `next dev` and `next start` bind 127.0.0.1 (`-H`), so a remote client cannot
+ * open the socket. REVIEW_ALLOW_REMOTE skips only this header check.
+ */
 export function assertLocal(request: Request): void {
   if (process.env.REVIEW_ALLOW_REMOTE === 'true') return;
   const host = (request.headers.get('host') ?? '').replace(/:\d+$/, '').toLowerCase();

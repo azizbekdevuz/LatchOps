@@ -35,6 +35,8 @@ export class ReviewError extends Error {
 export interface ServiceDeps {
   provider?: LlmProvider;
   now?: () => Date;
+  /** Test seam. Runs after the single-use reservation and before isolated Git work. */
+  beforeIsolate?: () => Promise<void>;
 }
 
 function requireActor(actor: ReviewActor | null, roles: ReviewActor['role'][]): ReviewActor {
@@ -378,6 +380,38 @@ export async function recordDecision(
   return id;
 }
 
+const RESERVED_STATUS = 'executing';
+
+/**
+ * Compare-and-set the incident to `executing` before any isolated Git work.
+ * A second caller loses this update and must not run commands.
+ */
+async function reserveExecution(incidentId: string): Promise<{ ok: true; previousStatus: string } | { ok: false; reason: string }> {
+  const db = await reviewDb();
+  return db.$transaction(async (tx) => {
+    const incident = await tx.reviewIncident.findUnique({ where: { id: incidentId } });
+    if (!incident) return { ok: false, reason: 'Incident not found' };
+    if (incident.status === 'executed') return { ok: false, reason: 'this approval was already used for an execution' };
+    if (incident.status === RESERVED_STATUS) return { ok: false, reason: 'an execution is already in progress' };
+    const prior = await tx.executionRecord.findFirst({ where: { incidentId, authorized: true } });
+    if (prior) return { ok: false, reason: 'this approval was already used for an execution' };
+    const { count } = await tx.reviewIncident.updateMany({
+      where: { id: incidentId, status: incident.status },
+      data: { status: RESERVED_STATUS },
+    });
+    if (count !== 1) return { ok: false, reason: 'an execution is already in progress' };
+    return { ok: true, previousStatus: incident.status };
+  });
+}
+
+async function releaseExecution(incidentId: string, previousStatus: string): Promise<void> {
+  const db = await reviewDb();
+  await db.reviewIncident.updateMany({
+    where: { id: incidentId, status: RESERVED_STATUS },
+    data: { status: previousStatus },
+  });
+}
+
 export async function executeReview(
   actorIn: ReviewActor | null,
   incidentId: string,
@@ -386,6 +420,19 @@ export async function executeReview(
   const db = await reviewDb();
   const incident = await db.reviewIncident.findUnique({ where: { id: incidentId } });
   if (!incident) throw new ReviewError('Incident not found', 404);
+  const reservation = await reserveExecution(incidentId);
+  if (!reservation.ok) {
+    await db.$transaction((tx) =>
+      appendAudit(tx, {
+        incidentId,
+        actorId: actorIn?.id ?? 'anonymous',
+        action: 'execution.denied',
+        payload: { reason: reservation.reason },
+      }),
+    );
+    return { id: null, authorized: false, verdict: 'BLOCKED' as const, reasons: [reservation.reason], result: null };
+  }
+
   const snapshot = await latestSnapshot(incidentId);
   const plan = JSON.parse(snapshot.planJson) as RecoveryPlanV1;
   const decisions = (await db.decisionRecord.findMany({ where: { incidentId } })).map(
@@ -396,9 +443,11 @@ export async function executeReview(
   const alternativeId = latest?.selectedAlternativeId ?? 'complete_merge';
   const scenario = incident.scenarioId ? getScenario(incident.scenarioId) : null;
   const now = deps.now?.() ?? new Date();
-
   const ws = scenario ? createReviewWorkspace() : null;
+  let consumed = false;
+
   try {
+    if (deps.beforeIsolate) await deps.beforeIsolate();
     let currentEvidenceHash: string | null = null;
     let before: RepoSignalsV1 | null = null;
     if (ws && scenario) {
@@ -430,7 +479,6 @@ export async function executeReview(
         ? await executeAuthorized({ ws, plan, alternativeId, auth, before, resolution: scenario.repo.resolution })
         : null;
     const verdict = result?.verdict ?? 'BLOCKED';
-
     const id = newId('exec');
     await db.$transaction(async (tx) => {
       await tx.executionRecord.create({
@@ -445,7 +493,10 @@ export async function executeReview(
           resultJson: result ? canonicalJson(result) : null,
         },
       });
-      if (auth.allowed) await tx.reviewIncident.update({ where: { id: incidentId }, data: { status: 'executed' } });
+      await tx.reviewIncident.updateMany({
+        where: { id: incidentId, status: RESERVED_STATUS },
+        data: { status: auth.allowed ? 'executed' : reservation.previousStatus },
+      });
       await appendAudit(tx, {
         incidentId,
         actorId: actorIn?.id ?? 'anonymous',
@@ -453,7 +504,19 @@ export async function executeReview(
         payload: { executionId: id, verdict, reasons: auth.allowed ? result?.reasons : auth.reasons, alternativeId },
       });
     });
+    consumed = true;
     return { id, authorized: auth.allowed, verdict, reasons: auth.allowed ? (result?.reasons ?? []) : auth.reasons, result };
+  } catch (error) {
+    if (!consumed) await releaseExecution(incidentId, reservation.previousStatus);
+    await db.$transaction((tx) =>
+      appendAudit(tx, {
+        incidentId,
+        actorId: actorIn?.id ?? 'anonymous',
+        action: 'execution.failed',
+        payload: { message: error instanceof Error ? error.message.slice(0, 300) : 'execution failed' },
+      }),
+    );
+    throw error;
   } finally {
     await ws?.dispose();
   }

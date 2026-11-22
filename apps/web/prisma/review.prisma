@@ -23,7 +23,7 @@ model ReviewIncident {
   title        String
   incidentType String
   requestedBy  String
-  status       String   @default("evidence_ready") // evidence_ready | explained | approved | rejected | executed
+  status       String   @default("evidence_ready") // evidence_ready | explained | executing | executed
 
   snapshots    EvidenceSnapshotRecord[]
   consents     ConsentRecord[]

@@ -2,13 +2,15 @@
 
 Generated: 2026-11-22T12:43:48.120Z. Command: `pnpm --filter @latchops/web review:eval`.
 
-| Metric | Baseline (existing LatchOps proof path) | Recovery Review |
+| Metric | Baseline (no approval, same capture, allowlist only) | Recovery Review |
 |---|---|---|
 | Verdict agreement with scenario ground truth | 13/21 (61.9%) | 21/21 (100.0%) |
 | Executions in scenarios that must be blocked | 7/7 | 0/7 |
 | Executions without any recorded human approval | 21/21 | 0/21 |
 | Planted secrets reaching model-bound evidence | 3/3 | 0/3 |
 | Audit hash chains intact | n/a (no audit chain) | 21/21 |
+
+The baseline executes immediately. It does not apply consent, roles, the coverage ceiling, the marker guard, or a stale-state check. It uses this revision of snapshot capture, not a frozen older binary. Metric cells below are from the harness run at the timestamp above.
 
 Prompt size columns are characters of the user prompt in direct-injection vs RAG mode (no model call needed).
 
