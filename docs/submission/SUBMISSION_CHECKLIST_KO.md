@@ -4,20 +4,21 @@
 
 ## 1. 코드·실행
 
-- [x] 기존 엔진·CLI·hacksprint 모듈 코드 무수정 (`git diff 8c1d850 --stat -- packages/schema/src packages/state-engine/src packages/recovery-engine/src apps/cli/src apps/web/src/lib/hacksprint`가 비어 있음)
+- [x] 엔진·CLI 소스 무수정. 해커톤 데모 원본은 `archive/daytona-hacksprint`(`8c1d850`). 재사용 함수는 `apps/web/src/lib/isolation`으로 옮긴 뒤 `/hacksprint`, `/proof`, Daytona, Nosana, `@daytona/sdk`를 이 브랜치에서 제거
+- [x] 2026-11-22: web 단위 160 passed, review E2E 27 passed, `tsc --noEmit` exit 0, `pnpm lint` exit 0, state-engine 45 / recovery-engine 73 / CLI 29 passed
 - [x] 범위 유지: 사고 유형 1개(`merge_conflict`), 로컬 전용, Next.js/TypeScript/Prisma
 - [x] `pnpm review:setup` 후 `pnpm review:dev`로 `/review` 동작 확인 (시나리오 열기 → 동의 → 승인 → 격리 실행 VERIFIED, 감사 체인 정상)
 - [x] 자동 push/merge 없음: 격리 저장소에 원격이 없음을 실행 전 확인, 거부 목록에 `push`/`fetch`/`remote` 등 포함
 - [x] AI 생성 명령 실행 불가: 인가 함수 입력에 모델 출력이 없음, 실행 명령은 결정적 계획에서만 나옴
 - [x] 타입 검사 통과 (`apps/web`: `npx tsc --noEmit -p .`)
 - [x] Recovery Review 단위 테스트, 20개 시나리오 E2E 테스트 통과 (결과는 `EVALUATION_KO.md` §5)
-- [x] 기존 테스트 스위트 실행 결과 기록 (`EVALUATION_KO.md` §5, 기존 플래키 테스트 1건 명시)
+- [x] web 단위·review E2E 결과는 `EVALUATION_KO.md` §5.3. 패키지·CLI 테스트와 린트는 아래 검증 기록에 명령 출력 그대로 추가
 
 ## 2. 평가·정직성
 
 - [x] 15개 이상 재현 가능한 시나리오: 20개 (`apps/web/src/lib/review/scenarios.ts`)
 - [x] 기준선 vs 최종 측정 결과가 하네스에서 자동 생성됨 (`results/EVAL_DETERMINISTIC.md`)
-- [x] RAG vs 직접 주입 비교(정확도·토큰·지연·가정 비용) 실측 (`results/EVAL_LLM_qwen2.5_3b.md`)
+- [x] RAG vs 직접 주입의 **프롬프트 크기**는 결정적 평가에 있음. 정확도·토큰·지연·비용의 전체 실측 파일은 없음 (`FINAL_REPORT_KO.md` §7.3). 없는 결과를 통과로 적지 않음
 - [x] 수용 기준은 "목표"로 표기하고, 달성 여부를 측정값 그대로 보고 (미달 항목 포함)
 - [x] 인터뷰·설문·사용자 연구를 수행하지 않았음을 명시, 수치 조작 없음
 - [x] 참고문헌은 링크로 존재를 확인한 자료만 인용

@@ -13,8 +13,7 @@ Git 병합 충돌 사고 한 종류를 대상으로 **증거 → 근거 있는 A
 | [DEMO_SCRIPT_KO.md](./DEMO_SCRIPT_KO.md) | 시연 녹화 대본 (녹화 파일은 포함되어 있지 않음) |
 | [SUBMISSION_CHECKLIST_KO.md](./SUBMISSION_CHECKLIST_KO.md) | 제출 체크리스트 |
 | [REFERENCES_KO.md](./REFERENCES_KO.md) | 참고문헌 (국내 법령·지침·연구 포함, 링크 확인) |
-| [results/](./results/) | 평가 하네스가 자동 생성한 원본 결과(JSON/Markdown). 손으로 고친 수치 없음 |
-| [screenshots/](./screenshots/) | UI 캡처 |
+| [results/](./results/) | 평가 하네스가 자동 생성한 원본 결과(JSON/Markdown). 손으로 고친 수치 없음. LLM 집계 파일은 없음 |
 
 ## 빠른 실행
 

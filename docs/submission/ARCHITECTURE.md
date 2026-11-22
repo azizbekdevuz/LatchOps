@@ -12,7 +12,7 @@ flowchart LR
     SE["packages/state-engine<br/>captureSnapshot → computeRepoSignals"]
     RE["packages/recovery-engine<br/>generateRecoveryPlan / verifyRecovery"]
     SC["packages/schema<br/>SnapshotV1 · RepoSignalsV1 · RecoveryPlanV1 (Zod)"]
-    HS["apps/web/src/lib/hacksprint<br/>isExecutablePlanCommand · decideVerdict<br/>isolatedGitEnv · captureSnapshotFromWorkspace"]
+    HS["apps/web/src/lib/isolation<br/>isExecutablePlanCommand · decideVerdict<br/>isolatedGitEnv · captureSnapshotFromWorkspace"]
   end
 
   subgraph New["신규 Recovery Review (apps/web)"]

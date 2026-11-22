@@ -37,7 +37,7 @@
 
 ## 3. 비교 대상
 
-- **기준선**(`apps/web/src/lib/review/baseline.ts`): 중간 발표 시점 경로를 재현합니다. 계획 직후 실행하고, 기존 구조적 허용 목록(`isExecutablePlanCommand`)만 씁니다. 동의·승인·역할·마커 검사·커버리지 검사·상태 변경 검사가 없습니다. 모델 입력은 기존 `buildNosanaEvidence()`, 프롬프트는 기존 Nosana 시스템 프롬프트를 그대로 씁니다.
+- **기준선**(`apps/web/src/lib/review/baseline.ts`): 중간 발표 시점 경로를 재현합니다. 계획 직후 실행하고, 기존 구조적 허용 목록(`isExecutablePlanCommand`)만 씁니다. 동의·승인·역할·마커 검사·커버리지 검사·상태 변경 검사가 없습니다. 모델 입력은 `buildLegacyExplanationEvidence()`(해커톤의 `buildNosanaEvidence()`와 같은 구현), 프롬프트는 옛 시스템 프롬프트 문자열을 그대로 씁니다.
 - **최종**: Recovery Review 서비스 전체(`service.ts`)를 시나리오 러너(`scenario-runner.ts`)가 실제 SQLite DB와 함께 구동합니다.
 
 ## 4. 지표 정의
@@ -68,13 +68,23 @@
 
 시나리오별 결과와 첫 번째 사유는 원본 파일의 표에 있습니다. 기준선이 틀린 8건은 S04, S11, S12, S13, S15, S16, S17, S18입니다.
 
-### 5.2 로컬 모델 평가 (`results/EVAL_LLM_qwen2.5_3b.md`)
+### 5.2 로컬 모델 평가
 
-<!-- LLM_EVAL -->
+`results/`에는 결정적 결과만 있습니다. LLM 결과 파일은 생성되지 않았습니다. 중단된 실행의 로그와 그 한계는 `FINAL_REPORT_KO.md` §7.3과 같습니다. 여기 적지 않은 승인율이나 비용은 없는 숫자입니다.
 
 ### 5.3 자동화 테스트
 
-<!-- TESTS -->
+2026-11-22, `apps/web`에서 확인했습니다.
+
+| 명령 | 결과 |
+|---|---|
+| `npx vitest run src/lib` | 18 files, 160 tests passed (51.5s) |
+| `npx vitest run --config vitest.review.config.ts src/lib/review` | 1 file, 27 tests passed (230.4s) |
+| `npx tsc --noEmit -p apps/web` | exit 0 |
+| `pnpm lint` | exit 0 (engines, schema, CLI) |
+| state-engine / recovery-engine / CLI tests | 45 / 73 / 29 passed |
+
+E2E 27개에는 시나리오 20개와 추가 회귀(승인 1회용, 감사 변조, CLI 가져오기, 범위 밖 스냅샷, viewer 생성 거부)가 들어 있습니다. 2026-11-19의 이전 실행도 같은 E2E 27개와 당시 단위 64개를 통과했습니다. 단위 수가 160으로 늘어난 것은 격리 모듈 테스트가 `src/lib` 집계에 포함되기 때문입니다.
 
 ## 6. 재현 명령
 
