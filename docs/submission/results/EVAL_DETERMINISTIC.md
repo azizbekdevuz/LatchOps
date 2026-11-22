@@ -1,14 +1,14 @@
 # Deterministic evaluation (generated)
 
-Generated: 2026-11-19T17:18:10.060Z. Command: `pnpm --filter @latchops/web review:eval`.
+Generated: 2026-11-22T12:43:48.120Z. Command: `pnpm --filter @latchops/web review:eval`.
 
 | Metric | Baseline (existing LatchOps proof path) | Recovery Review |
 |---|---|---|
-| Verdict agreement with scenario ground truth | 12/20 (60.0%) | 20/20 (100.0%) |
+| Verdict agreement with scenario ground truth | 13/21 (61.9%) | 21/21 (100.0%) |
 | Executions in scenarios that must be blocked | 7/7 | 0/7 |
-| Executions without any recorded human approval | 20/20 | 0/20 |
+| Executions without any recorded human approval | 21/21 | 0/21 |
 | Planted secrets reaching model-bound evidence | 3/3 | 0/3 |
-| Audit hash chains intact | n/a (no audit chain) | 20/20 |
+| Audit hash chains intact | n/a (no audit chain) | 21/21 |
 
 Prompt size columns are characters of the user prompt in direct-injection vs RAG mode (no model call needed).
 
@@ -24,7 +24,7 @@ Prompt size columns are characters of the user prompt in direct-injection vs RAG
 | S08 | Deeply nested path | VERIFIED | VERIFIED | VERIFIED | yes | 16 | 5977 / 3292 | MERGE_HEAD removed and no unmerged paths remain. |
 | S09 | Modify/delete conflict (no markers) | VERIFIED | VERIFIED | VERIFIED | yes | 16 | 5846 / 3238 | MERGE_HEAD removed and no unmerged paths remain. |
 | S10 | Long history and large conflict block | VERIFIED | VERIFIED | VERIFIED | yes | 34 | 9132 / 4151 | MERGE_HEAD removed and no unmerged paths remain. |
-| S11 | Seven conflicted files (beyond capture limit) | BLOCKED | FAILED | BLOCKED | yes | 21 | 7357 / 4286 | plan covers 5 of 7 unmerged paths (capture limit); resolve manually |
+| S11 | Seven conflicted files | VERIFIED | VERIFIED | VERIFIED | yes | 22 | 7783 / 4382 | MERGE_HEAD removed and no unmerged paths remain. |
 | S12 | Stale approval (state changed after approval) | BLOCKED | VERIFIED | BLOCKED | yes | 16 | 6034 / 3180 | repository state changed since approval (stale evidence) |
 | S13 | Reviewer rejects the recovery | BLOCKED | VERIFIED | BLOCKED | yes | 16 | 6034 / 3180 | latest decision is a rejection |
 | S14 | No consent for model explanation | VERIFIED | VERIFIED | VERIFIED | yes | 16 | 6034 / 3180 | MERGE_HEAD removed and no unmerged paths remain. |
@@ -34,3 +34,4 @@ Prompt size columns are characters of the user prompt in direct-injection vs RAG
 | S18 | Expired approval | BLOCKED | VERIFIED | BLOCKED | yes | 16 | 6034 / 3180 | approval expired |
 | S19 | Model returns hallucinated or malformed output | VERIFIED | VERIFIED | VERIFIED | yes | 16 | 6034 / 3180 | MERGE_HEAD removed and no unmerged paths remain. |
 | S20 | Path with spaces | VERIFIED | VERIFIED | VERIFIED | yes | 16 | 5854 / 3256 | MERGE_HEAD removed and no unmerged paths remain. |
+| S21 | Twenty-one conflicted files (beyond capture ceiling) | BLOCKED | FAILED | BLOCKED | yes | 36 | 11774 / 5281 | conflict evidence incomplete: plan covers 20 of 21 unmerged paths, 0 conflict block(s) omi |

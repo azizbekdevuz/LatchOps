@@ -1,0 +1,299 @@
+{
+  "summary": {
+    "generatedAt": "2026-11-22T13:10:22.669Z",
+    "model": "qwen2.5:3b",
+    "scenarios": [
+      "S01",
+      "S10"
+    ],
+    "partial": true,
+    "baselineLlm": false,
+    "warmupMs": 9751,
+    "priceAssumption": {
+      "inputPerM": 0.15,
+      "outputPerM": 0.6
+    },
+    "direct": {
+      "calls": 2,
+      "accepted": 0,
+      "acceptedWithoutNormalization": 0,
+      "schemaInvalid": 1,
+      "errors": 1,
+      "withForbidden": 0,
+      "keyClaims": 3,
+      "unsupportedKey": 1,
+      "totalClaims": 3,
+      "unsupportedClaims": 1,
+      "medianLatencyMs": 132415,
+      "meanPromptTokens": 862,
+      "meanOutputTokens": 131,
+      "meanContextItems": 37,
+      "hypotheticalCostUsd": 0.00041519999999999995
+    },
+    "rag": {
+      "calls": 2,
+      "accepted": 0,
+      "acceptedWithoutNormalization": 0,
+      "schemaInvalid": 0,
+      "errors": 0,
+      "withForbidden": 0,
+      "keyClaims": 9,
+      "unsupportedKey": 3,
+      "totalClaims": 9,
+      "unsupportedClaims": 3,
+      "medianLatencyMs": 211303,
+      "meanPromptTokens": 1422,
+      "meanOutputTokens": 381,
+      "meanContextItems": 14,
+      "hypotheticalCostUsd": 0.0008836499999999999
+    },
+    "baseline": null
+  },
+  "calls": [
+    {
+      "scenarioId": "S01",
+      "mode": "direct",
+      "status": "rejected",
+      "keyClaims": 3,
+      "unsupportedKeyClaims": 1,
+      "totalClaims": 3,
+      "unsupportedClaims": 1,
+      "forbidden": [],
+      "schemaErrors": [],
+      "rejectionReasons": [
+        "1 key claim(s) not supported by cited evidence"
+      ],
+      "promptTokens": 1724,
+      "outputTokens": 261,
+      "latencyMs": 264830,
+      "contextItems": 28,
+      "normalizations": [
+        "recommendedAlternativeId: \"null\" -> null"
+      ],
+      "output": {
+        "claims": [
+          {
+            "citations": [
+              "E5",
+              "E7"
+            ],
+            "confidence": "high",
+            "id": "C1",
+            "key": true,
+            "text": "The current branch is 'main' with commit hash 38decc90a6.",
+            "type": "state"
+          },
+          {
+            "citations": [
+              "E6",
+              "E3"
+            ],
+            "confidence": "medium",
+            "id": "C2",
+            "key": true,
+            "text": "The conflict in deploy.env is between HEAD (current branch) and MERGE_HEAD (incoming branch).",
+            "type": "state"
+          },
+          {
+            "citations": [
+              "K2"
+            ],
+            "confidence": "high",
+            "id": "C3",
+            "key": true,
+            "text": "To resolve the merge, reviewers must manually edit the conflicted file deploy.env.",
+            "type": "risk"
+          }
+        ],
+        "humanDecisionNeeded": "true",
+        "recommendedAlternativeId": null,
+        "summary": "Merge conflict exists on deploy.env file, requiring manual resolution before completing or aborting the merge.",
+        "uncertainties": [
+          "I am unsure if there are any other unmerged paths that need to be resolved before completing or aborting the merge."
+        ]
+      },
+      "rawOutput": "{\n  \"summary\": \"Merge conflict exists on deploy.env file, requiring manual resolution before completing or aborting the merge.\",\n  \"claims\": [\n    { \"id\": \"C1\", \"text\": \"The current branch is 'main' with commit hash 38decc90a6.\" ,\"type\":\"state\" ,\"key\":true ,\"citations\":[ \"E5\", \"E7\"] ,\"confidence\": \"high\" },\n    { \"id\": \"C2\", \"text\": \"The conflict in deploy.env is between HEAD (current branch) and MERGE_HEAD (incoming branch).\" ,\"type\":\"state\" ,\"key\":true ,\"citations\":[\"E6\",\"E3\"],\"confidence\":\"medium\"},\n    { \"id\": \"C3\", \"text\": \"To resolve the merge, reviewers must manually edit the conflicted file deploy.env.\" ,\"type\":\"risk\" ,\"key\":true ,\"citations\":[ \"K2\"] ,\"confidence\":\"high\"}\n  ],\n  \"uncertainties\": [\n    \"I am unsure if there are any other unmerged paths that need to be resolved before completing or aborting the merge.\"\n  ]\n  , \"recommendedAlternativeId\": \"null\"\n  , \"humanDecisionNeeded\": \"true\"\n}",
+      "error": null
+    },
+    {
+      "scenarioId": "S01",
+      "mode": "rag",
+      "status": "rejected",
+      "keyClaims": 6,
+      "unsupportedKeyClaims": 2,
+      "totalClaims": 6,
+      "unsupportedClaims": 2,
+      "forbidden": [],
+      "schemaErrors": [],
+      "rejectionReasons": [
+        "2 key claim(s) not supported by cited evidence"
+      ],
+      "promptTokens": 1050,
+      "outputTokens": 510,
+      "latencyMs": 193169,
+      "contextItems": 14,
+      "normalizations": [
+        "recommendedAlternativeId: \"null\" -> null"
+      ],
+      "output": {
+        "claims": [
+          {
+            "citations": [
+              "E1"
+            ],
+            "confidence": "high",
+            "id": "C1",
+            "key": true,
+            "text": "The merge is still in progress with a single conflicted path (deploy.env). The repository evidence supports this.",
+            "type": "risk"
+          },
+          {
+            "citations": [
+              "E6"
+            ],
+            "confidence": "high",
+            "id": "C2",
+            "key": true,
+            "text": "The conflict involves changing PORT and REPLICAS values between HEAD (current branch) and MERGE_HEAD (incoming branch). The reviewer must decide which value to keep.",
+            "type": "risk"
+          },
+          {
+            "citations": [
+              "K6"
+            ],
+            "confidence": "high",
+            "id": "C3",
+            "key": true,
+            "text": "The merge is in progress with a high risk of deployment issues due to configuration conflicts. The reviewer must decide which side's values are authoritative.",
+            "type": "risk"
+          },
+          {
+            "citations": [
+              "E15",
+              "E16"
+            ],
+            "confidence": "medium",
+            "id": "C4",
+            "key": true,
+            "text": "There is no clear recommendation for how to proceed from the provided alternatives. The reviewer must make a decision based on the conflict details and risk assessment.",
+            "type": "risk"
+          },
+          {
+            "citations": [
+              "E2"
+            ],
+            "confidence": "high",
+            "id": "C5",
+            "key": true,
+            "text": "The merge is still in progress with MERGE_HEAD at b98a8843. The repository evidence supports this.",
+            "type": "risk"
+          },
+          {
+            "citations": [
+              "E14"
+            ],
+            "confidence": "high",
+            "id": "C6",
+            "key": true,
+            "text": "The merge is in progress with a medium risk level and requires manual resolution of the conflict before committing. The reviewer must decide which side's values are authoritative.",
+            "type": "risk"
+          }
+        ],
+        "humanDecisionNeeded": "true",
+        "recommendedAlternativeId": null,
+        "summary": "Merge conflict detected on deploy.env file, requiring manual resolution before commit.",
+        "uncertainties": [
+          "The repository evidence does not provide a clear recommendation for how to proceed from the provided alternatives. The reviewer must make a decision based on the conflict details and risk assessment."
+        ]
+      },
+      "rawOutput": "{\n  \"summary\": \"Merge conflict detected on deploy.env file, requiring manual resolution before commit.\",\n  \"claims\": [\n    {\"id\": \"C1\", \"text\": \"The merge is still in progress with a single conflicted path (deploy.env). The repository evidence supports this.\" , \"type\": \"risk\", \"key\": true, \"citations\": [\"E1\"] ,\"confidence\": \"high\"},\n    {\"id\": \"C2\", \"text\": \"The conflict involves changing PORT and REPLICAS values between HEAD (current branch) and MERGE_HEAD (incoming branch). The reviewer must decide which value to keep.\", \"type\": \"risk\", \"key\": true, \"citations\": [\"E6\"] ,\"confidence\": \"high\"},\n    {\"id\": \"C3\", \"text\": \"The merge is in progress with a high risk of deployment issues due to configuration conflicts. The reviewer must decide which side's values are authoritative.\", \"type\": \"risk\", \"key\": true, \"citations\": [\"K6\"] ,\"confidence\": \"high\"},\n    {\"id\": \"C4\", \"text\": \"There is no clear recommendation for how to proceed from the provided alternatives. The reviewer must make a decision based on the conflict details and risk assessment.\", \"type\": \"risk\", \"key\": true, \"citations\": [\"E15\", \"E16\"] ,\"confidence\": \"medium\"},\n    {\"id\": \"C5\", \"text\": \"The merge is still in progress with MERGE_HEAD at b98a8843. The repository evidence supports this.\", \"type\": \"risk\", \"key\": true, \"citations\": [\"E2\"] ,\"confidence\": \"high\"},\n    {\"id\": \"C6\", \"text\": \"The merge is in progress with a medium risk level and requires manual resolution of the conflict before committing. The reviewer must decide which side's values are authoritative.\", \"type\": \"risk\", \"key\": true, \"citations\": [\"E14\"] ,\"confidence\": \"high\"}\n  ],\n  \"uncertainties\": [\n    \"The repository evidence does not provide a clear recommendation for how to proceed from the provided alternatives. The reviewer must make a decision based on the conflict details and risk assessment.\"\n  ]\n  , \"recommendedAlternativeId\": \"null\"\n  ,\"humanDecisionNeeded\": \"true\"\n}",
+      "error": null
+    },
+    {
+      "scenarioId": "S10",
+      "mode": "direct",
+      "status": "error",
+      "keyClaims": 0,
+      "unsupportedKeyClaims": 0,
+      "totalClaims": 0,
+      "unsupportedClaims": 0,
+      "forbidden": [],
+      "schemaErrors": [
+        "model call failed: fetch failed"
+      ],
+      "rejectionReasons": [
+        "model call failed: fetch failed"
+      ],
+      "promptTokens": null,
+      "outputTokens": null,
+      "latencyMs": null,
+      "contextItems": 46,
+      "normalizations": [],
+      "output": null,
+      "rawOutput": null,
+      "error": "fetch failed"
+    },
+    {
+      "scenarioId": "S10",
+      "mode": "rag",
+      "status": "rejected",
+      "keyClaims": 3,
+      "unsupportedKeyClaims": 1,
+      "totalClaims": 3,
+      "unsupportedClaims": 1,
+      "forbidden": [],
+      "schemaErrors": [],
+      "rejectionReasons": [
+        "1 key claim(s) not supported by cited evidence"
+      ],
+      "promptTokens": 1793,
+      "outputTokens": 252,
+      "latencyMs": 229436,
+      "contextItems": 13,
+      "normalizations": [],
+      "output": {
+        "claims": [
+          {
+            "citations": [
+              "E1"
+            ],
+            "confidence": "high",
+            "id": "C1",
+            "key": true,
+            "text": "The merge is in progress with a single conflicted path.",
+            "type": "state"
+          },
+          {
+            "citations": [
+              "E6"
+            ],
+            "confidence": "medium",
+            "id": "C2",
+            "key": true,
+            "text": "The conflict involves changing the value of 'FLAG_1' from 'on_1' to 'off_1'.",
+            "type": "cause"
+          },
+          {
+            "citations": [
+              "K5"
+            ],
+            "confidence": "high",
+            "id": "C3",
+            "key": true,
+            "text": "The reviewer must decide whether to keep the modified file or accept its deletion.",
+            "type": "risk"
+          }
+        ],
+        "humanDecisionNeeded": "true",
+        "recommendedAlternativeId": null,
+        "summary": "Merge conflict exists in 'flags.env' file, requiring manual resolution.",
+        "uncertainties": [
+          "I am unsure if the commit message is accurate and if there are any other conflicted files that have not been identified."
+        ]
+      },
+      "rawOutput": "{\n  \"summary\": \"Merge conflict exists in 'flags.env' file, requiring manual resolution.\",\n  \"claims\": [\n    {\"id\": \"C1\", \"text\": \"The merge is in progress with a single conflicted path.\" , \"type\": \"state\", \"key\": true, \"citations\": [\"E1\"] ,\"confidence\": \"high\"},\n    {\"id\": \"C2\", \"text\": \"The conflict involves changing the value of 'FLAG_1' from 'on_1' to 'off_1'.\", \"type\": \"cause\", \"key\": true, \"citations\": [\"E6\"] ,\"confidence\": \"medium\"},\n    {\"id\": \"C3\", \"text\": \"The reviewer must decide whether to keep the modified file or accept its deletion.\", \"type\": \"risk\", \"key\": true, \"citations\": [\"K5\"] ,\"confidence\": \"high\"}\n  ],\n  \"uncertainties\": [\n    \"I am unsure if the commit message is accurate and if there are any other conflicted files that have not been identified.\"\n  ]\n  ,\n  \"recommendedAlternativeId\": null\n  ,\n  \"humanDecisionNeeded\": \"true\"\n}",
+      "error": null
+    }
+  ],
+  "baselineCalls": []
+}

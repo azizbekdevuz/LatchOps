@@ -101,7 +101,7 @@ sequenceDiagram
 | 7 | 승인이 가리키는 evidenceHash/planHash가 저장된 스냅샷과 일치 | `approval refers to different evidence` |
 | 8 | 저장된 계획을 다시 지문화한 값이 승인 시 지문과 일치 (DB 변조 탐지) | `stored plan does not match the approved plan fingerprint (tampered)` |
 | 9 | 실행 직전에 다시 캡처한 상태 해시가 승인 시 해시와 일치 | `repository state changed since approval (stale evidence)` |
-| 10 | 계획이 모든 미병합 경로를 포함 (기존 캡처의 5개 제한 탐지) | `plan covers 5 of 7 unmerged paths` |
+| 10 | 캡처가 모든 미병합 경로와 충돌 블록을 담음 (천장: 파일 20, 블록 8) | `conflict evidence incomplete: plan covers N of M unmerged paths` |
 | 11 | 요청한 대안이 승인된 대안과 동일하고 계획에 존재 | `approved alternative is …, requested …` |
 | 12 | 모든 계획 명령이 거부 목록을 통과 (`push`, `fetch`, `clean`, `reset`, `checkout`, `--force`, `--hard`, `--exec*` 등) | `git push is never allowed` |
 | 13 | 실제 실행 명령은 기존 `isExecutablePlanCommand` 허용 목록을 통과한 계획 명령뿐 | (허용 목록 밖 명령은 실행 목록에서 제외) |
