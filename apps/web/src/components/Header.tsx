@@ -5,20 +5,7 @@ import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { Home, History, LogOut, User, Menu, X, ClipboardCheck } from 'lucide-react';
 import { useState } from 'react';
-
-function LatchMark() {
-  return (
-    <span className="relative flex w-9 h-9 items-center justify-center rounded-[10px] border border-border-strong bg-bg-tertiary overflow-hidden transition-shadow duration-300 group-hover:shadow-[0_0_24px_-6px_rgba(52,224,161,0.5)]">
-      {/* Latch glyph: a bracket that "locks" */}
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-        <path d="M5 2H3.5C2.7 2 2 2.7 2 3.5v11c0 .8.7 1.5 1.5 1.5H5" stroke="var(--accent-green)" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M13 2h1.5c.8 0 1.5.7 1.5 1.5v11c0 .8-.7 1.5-1.5 1.5H13" stroke="var(--text-secondary)" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M6 9h6" stroke="var(--accent-green)" strokeWidth="1.8" strokeLinecap="round" />
-        <circle cx="12.5" cy="9" r="1.6" fill="var(--accent-green)" />
-      </svg>
-    </span>
-  );
-}
+import { BrandLogo } from '@/components/BrandLogo';
 
 export function Header() {
   const { data: session, status } = useSession();
@@ -43,15 +30,7 @@ export function Header() {
             href={isAuthenticated ? '/dashboard' : '/'}
             className="flex items-center gap-3 group no-underline hover:no-underline"
           >
-            <LatchMark />
-            <span className="hidden sm:flex items-baseline gap-1.5">
-              <span className="font-display font-semibold text-lg tracking-tight text-text-primary">
-                LatchOps
-              </span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-muted">
-                resilience
-              </span>
-            </span>
+            <BrandLogo priority className="h-8 w-auto sm:h-9" />
           </Link>
 
           {/* Desktop Navigation */}

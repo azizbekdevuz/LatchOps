@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { BrandLogo } from '@/components/BrandLogo';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -80,10 +81,8 @@ export default function SignUpPage() {
       <div className="absolute inset-0 bg-grid pointer-events-none" aria-hidden="true" />
       <div className="relative w-full max-w-md">
         <div className="rounded-xl border border-border-color bg-bg-secondary/90 backdrop-blur p-8 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)]">
-          <Link href="/" className="block text-center mb-2 no-underline hover:no-underline">
-            <span className="font-display text-2xl font-bold tracking-tight text-text-primary">
-              Latch<span className="text-accent-green">Ops</span>
-            </span>
+          <Link href="/" className="flex justify-center mb-2 no-underline hover:no-underline">
+            <BrandLogo className="h-10 w-auto" />
           </Link>
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-text-muted text-center mb-8">
             incident room access

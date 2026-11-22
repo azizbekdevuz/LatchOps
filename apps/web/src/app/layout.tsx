@@ -25,6 +25,11 @@ export const metadata: Metadata = {
   title: 'LatchOps — AI agent safety layer for Git & CI/CD resilience',
   description:
     'LatchOps detects dangerous repository states and produces deterministic recovery plans with explicit undo paths via git reflog.',
+  openGraph: {
+    title: 'LatchOps',
+    description: 'Evidence-backed Git recovery.',
+    images: [{ url: '/brand/latchops-lockup-on-dark.png', width: 1966, height: 738, alt: 'LatchOps. Evidence-backed Git recovery.' }],
+  },
 };
 
 export default function RootLayout({

@@ -1,4 +1,5 @@
 ﻿import Link from 'next/link';
+import { BrandLogo } from '@/components/BrandLogo';
 import { Header } from '@/components/Header';
 import { Reveal } from '@/components/Reveal';
 
@@ -329,9 +330,10 @@ export default function LandingPage() {
       {/* ============ Footer ============ */}
       <footer className="border-t border-border-color">
         <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="font-mono text-xs text-text-muted">
-            LatchOps — AI agent safety layer for Git recovery and DevOps resilience
-          </p>
+          <div className="flex flex-col items-center sm:items-start gap-2">
+            <BrandLogo className="h-7 w-auto" />
+            <p className="font-mono text-xs text-text-muted">Evidence-backed Git recovery</p>
+          </div>
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-text-muted">
             reversible by design
           </p>

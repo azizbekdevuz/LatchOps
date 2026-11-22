@@ -1,5 +1,9 @@
 # LatchOps
 
+<p align="center">
+  <img src="./docs/brand/latchops-lockup-on-dark.png" alt="LatchOps. Evidence-backed Git recovery." width="640" />
+</p>
+
 **Classify a dangerous Git state, explain it from evidence, and recover only after a person approves.**
 
 LatchOps is a local safety layer for repository recovery. Deterministic engines classify the snapshot and write the plan. A local model may explain that evidence, but only with consent, and only claims that cite the evidence are shown. A second person approves one plan alternative. Execution happens in a throwaway repository, never in yours, and never pushes.
@@ -85,5 +89,20 @@ The Daytona / Nosana HackSprint proof (`/hacksprint`, `/proof`, sponsor keys) is
 - Review scenarios rebuild a fictional checkout-service conflict. They are not a customer repository.
 - A local model call is reported only after it returns. This repository's checked-in evaluation currently includes the deterministic 20-scenario run. A full direct-vs-retrieval model run was not completed on CPU; see `docs/submission/EVALUATION_KO.md`.
 - Demo actor tokens on `/review` are local identities, not accounts.
+
+## Brand assets
+
+Raster crops of the supplied masters. These are not SVG files, and the glossy edges are the source artwork.
+
+| Use | File |
+|---|---|
+| README and dark slides | `docs/brand/latchops-lockup-on-dark.png` (full mark and tagline on a dark plate, so the white wordmark stays visible) |
+| Transparent lockup | `apps/web/public/brand/latchops-lockup.png` |
+| Navigation, footer, sign-in | `apps/web/public/brand/latchops-wordmark.png` |
+| Light surfaces | `apps/web/public/brand/latchops-wordmark-light.png` |
+| App icon, favicon, Apple touch icon | `apps/web/src/app/icon.png`, `apps/web/src/app/apple-icon.png` |
+| Monochrome symbol | `apps/web/public/brand/latchops-mono.png` (small disconnected specks removed; not used in the site chrome) |
+
+Original files are in `branding/source/`. Do not upscale these rasters.
 
 MIT
