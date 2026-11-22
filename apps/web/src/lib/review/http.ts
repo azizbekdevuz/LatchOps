@@ -16,7 +16,7 @@ const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
 export function assertLocal(request: Request): void {
   if (process.env.REVIEW_ALLOW_REMOTE === 'true') return;
   const host = (request.headers.get('host') ?? '').replace(/:\d+$/, '').toLowerCase();
-  if (!LOCAL_HOSTS.has(host)) throw new ReviewError('Recovery Review accepts only local requests', 403);
+  if (!LOCAL_HOSTS.has(host)) throw new ReviewError('Recovery Review accepts only local requests. Public support is comming soon...', 403);
 }
 
 export function actorOf(request: Request): ReviewActor | null {
