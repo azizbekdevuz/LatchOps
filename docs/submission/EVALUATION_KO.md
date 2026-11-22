@@ -8,7 +8,7 @@
 2. **설명 품질**: 로컬 모델의 설명 중 몇 %가 검증기를 통과하는가? 생성된 핵심 주장 중 근거 없는 것은 몇 %인가?
 3. **RAG vs 직접 주입**: 같은 조건에서 정확도·토큰·지연·비용이 어떻게 다른가?
 
-## 2. 시나리오 (20개, `apps/web/src/lib/review/scenarios.ts`)
+## 2. 시나리오 (21개, `apps/web/src/lib/review/scenarios.ts`)
 
 시나리오는 21개입니다. 각 시나리오는 OS 임시 디렉터리에 실제 Git 저장소를 만들고, 고정 날짜(`2026-01-05T09:00:00+09:00`)로 커밋한 뒤 `git merge`로 충돌을 재현합니다.
 
@@ -59,7 +59,7 @@
 
 ## 5. 결과
 
-### 5.1 결정적 평가 (`results/EVAL_DETERMINISTIC.md`, 2026-11-19 생성)
+### 5.1 결정적 평가 (`results/EVAL_DETERMINISTIC.md`, 2026-11-22T12:43:48Z 생성)
 
 | 지표 | 기준선 | Recovery Review |
 |---|---|---|
@@ -87,14 +87,14 @@
 | `pnpm lint` | exit 0 (engines, schema, CLI) |
 | state-engine / recovery-engine / CLI tests | 45 / 73 / 29 passed |
 
-E2E 27개에는 시나리오 20개와 추가 회귀(승인 1회용, 감사 변조, CLI 가져오기, 범위 밖 스냅샷, viewer 생성 거부)가 들어 있습니다. 2026-11-19의 이전 실행도 같은 E2E 27개와 당시 단위 64개를 통과했습니다. 단위 수가 160으로 늘어난 것은 격리 모듈 테스트가 `src/lib` 집계에 포함되기 때문입니다.
+시나리오 파일은 21개입니다(저장소 13개: S01–S11, S20, S21. 통제 8개: S12–S19). 위 표의 27개 E2E는 시나리오가 20개이던 2026-11-19 실행입니다. 같은 날 이후 시나리오 21개와 추가 회귀를 포함한 실행은 28개였습니다. 2026-11-22에 `npx vitest run --config vitest.review.config.ts src/lib/review/scenarios.e2e.test.ts`를 다시 실행한 결과는 31 passed(359.6s)입니다. 여기에는 명령 시작 전 실패의 재시도와, 명령이 끝난 뒤 결과 저장이 실패하면 승인을 `executing`으로 남겨 재사용하지 않는 회귀가 들어 있습니다. 같은 실행에서 `npx vitest run src/lib/review`는 6 files, 72 passed입니다. 위 표의 단위 160개와 패키지·CLI 숫자는 그 이전 실행이며, 이 커밋에서 다시 돌리지 않았습니다.
 
 ## 6. 재현 명령
 
 ```powershell
 pnpm install
 pnpm review:setup
-pnpm review:test                                     # 단위 + 20개 시나리오 E2E
+pnpm review:test                                     # 단위 + 21개 시나리오 E2E
 pnpm review:eval                                     # 결정적 평가 (약 5분)
 $env:REVIEW_EVAL_LLM='1'; $env:REVIEW_OLLAMA_MODEL='qwen2.5:3b'; pnpm review:eval   # + LLM (CPU 약 2시간)
 # 부분 실행: $env:REVIEW_EVAL_SCENARIOS='S01,S05'; $env:REVIEW_EVAL_SKIP_DETERMINISTIC='1'

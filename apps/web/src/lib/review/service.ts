@@ -7,7 +7,7 @@ import { APPROVAL_TTL_MS, authorizeExecution, canApprove, type DecisionLike } fr
 import { canonicalJson } from './canonical';
 import { reviewDb } from './db';
 import { buildEvidence } from './evidence';
-import { captureState, createReviewWorkspace, executeAuthorized, materializeRepo } from './isolated';
+import { captureState, createReviewWorkspace, executeAuthorized, materializeRepo, type IsolatedRunResult } from './isolated';
 import { KNOWLEDGE_BASE } from './knowledge';
 import { defaultProvider, type LlmProvider } from './llm';
 import { buildPrompt } from './prompt';
@@ -37,6 +37,8 @@ export interface ServiceDeps {
   now?: () => Date;
   /** Test seam. Runs after the single-use reservation and before isolated Git work. */
   beforeIsolate?: () => Promise<void>;
+  /** Test seam. Runs after authorized commands return and before the result is saved. */
+  beforePersist?: () => Promise<void>;
 }
 
 function requireActor(actor: ReviewActor | null, roles: ReviewActor['role'][]): ReviewActor {
@@ -445,6 +447,7 @@ export async function executeReview(
   const now = deps.now?.() ?? new Date();
   const ws = scenario ? createReviewWorkspace() : null;
   let consumed = false;
+  let commandsStarted = false;
 
   try {
     if (deps.beforeIsolate) await deps.beforeIsolate();
@@ -474,10 +477,12 @@ export async function executeReview(
       now,
     });
 
-    const result =
-      auth.allowed && ws && scenario && before
-        ? await executeAuthorized({ ws, plan, alternativeId, auth, before, resolution: scenario.repo.resolution })
-        : null;
+    let result: IsolatedRunResult | null = null;
+    if (auth.allowed && ws && scenario && before) {
+      commandsStarted = true;
+      result = await executeAuthorized({ ws, plan, alternativeId, auth, before, resolution: scenario.repo.resolution });
+    }
+    if (deps.beforePersist) await deps.beforePersist();
     const verdict = result?.verdict ?? 'BLOCKED';
     const id = newId('exec');
     await db.$transaction(async (tx) => {
@@ -507,7 +512,8 @@ export async function executeReview(
     consumed = true;
     return { id, authorized: auth.allowed, verdict, reasons: auth.allowed ? (result?.reasons ?? []) : auth.reasons, result };
   } catch (error) {
-    if (!consumed) await releaseExecution(incidentId, reservation.previousStatus);
+    // Commands in the throwaway repo cannot be undone. Keep the reservation so the approval cannot run again.
+    if (!consumed && !commandsStarted) await releaseExecution(incidentId, reservation.previousStatus);
     await db.$transaction((tx) =>
       appendAudit(tx, {
         incidentId,

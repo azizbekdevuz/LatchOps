@@ -26,7 +26,7 @@
 | VERIFIED/FAILED 판정 | ✅ `decideVerdict` | 재사용, 인가 거부 시 `BLOCKED` 추가 | `isolation/verdict.ts` [기존에서 이동], `review/isolated.ts` [신규] |
 | 실행 명령 허용 목록 | ✅ `isExecutablePlanCommand` (구조적 허용 목록) | 재사용 + **거부 목록**(push/fetch/clean/reset/checkout/--force/--hard 등) 추가 | `isolation/commands.ts` [기존에서 이동], `review/authorize.ts` [신규] |
 | 격리 실행 환경 | ✅ 로컬 임시 디렉터리. Daytona 샌드박스는 해커톤 전용 | 로컬 임시 저장소만 사용, 원격 없음 확인, 고정 커밋 날짜. Daytona 구현은 이 브랜치에서 제거 | `isolation/workspace.ts` [기존에서 이동], `review/isolated.ts` [신규] |
-| 사고 재현 시나리오 | 1개 (checkout-service `deploy.env`) | **20개** (저장소 12 + 안전 통제 8) | `review/scenarios.ts` [신규] |
+| 사고 재현 시나리오 | 1개 (checkout-service `deploy.env`) | **21개** (저장소 13 + 안전 통제 8) | `review/scenarios.ts` [신규] |
 | 증거 스냅샷 | 단일 JSON 요약(`buildLegacyExplanationEvidence`, 옛 이름 `buildNosanaEvidence`) | **번호가 매겨진 증거 항목(E1..En)**, 신뢰 불가 표시, 잘림 기록, 커버리지 공백 항목, SHA-256 해시 | `review/legacy-evidence.ts` [기준선용으로 보존], `review/evidence.ts` [신규] |
 | 비밀값 마스킹 | `scrub()` 정규식 3개 — **충돌 본문(ours/theirs)에는 미적용** | 13종 규칙, 모든 증거 항목에 적용, 재검사(`verifiedClean`), 프롬프트 직전 재검사 | `review/legacy-evidence.ts` [옛 규칙 보존], `review/redact.ts` [신규] |
 | 모델 전송 동의 | 없음 (키가 있으면 자동 호출) | 증거 해시 + 제공자에 바인딩된 동의/철회, 동의 없으면 호출 차단(409) | `review/service.ts` [신규] |
@@ -39,7 +39,7 @@
 | 영속 저장 | 해커톤 증명 결과는 DB에 저장하지 않았음 (기존 제품의 incident는 PostgreSQL) | SQLite: 사고·스냅샷·동의·설명·결정·실행·감사 | `prisma/review.prisma` [신규] |
 | CLI 스냅샷 검토 | CLI `send`로 웹 incident room 전송 | CLI `snapshot` JSON 가져오기 → 검토 전용(실행 불가) | `apps/cli` [기존], `review/service.ts#importCliSnapshot` [신규] |
 | 검토 UI | `/hacksprint` 단일 버튼 데모 (아카이브 브랜치) | `/review` 목록·시나리오·가져오기, `/review/[id]` 증거/설명/결정/실행/감사 화면 | `app/review/*` [신규] |
-| 평가 | 단위 테스트 | 기준선 vs 최종 20개 시나리오 비교, LLM direct vs RAG vs 기존 프롬프트 비교 | `scripts/review/evaluate.eval.ts` [신규] |
+| 평가 | 단위 테스트 | 기준선 vs 최종 21개 시나리오 비교. LLM은 S01·S10 표본 4회이며 전체 11개 비교는 없음 | `scripts/review/evaluate.eval.ts` [신규] |
 
 ## 3. 기존 모듈을 고치지 않은 이유와 예외
 

@@ -31,7 +31,7 @@ Flow: **evidence → grounded explanation → explicit approval → isolated run
 4. **Isolated run.** The server rebuilds the incident in a temporary repository, re-hashes it, and runs `authorizeExecution`. Only commands from the approved plan alternative can run. `verifyRecovery` decides `VERIFIED` or `FAILED`. A denied run is `BLOCKED`.
 
 ```bash
-pnpm review:test           # unit tests and 20 scenario end-to-end tests; no model
+pnpm review:test           # unit tests and 21 scenario end-to-end tests; no model
 pnpm review:eval           # baseline vs Recovery Review -> docs/submission/results/
 ```
 
@@ -87,7 +87,7 @@ The Daytona / Nosana HackSprint proof (`/hacksprint`, `/proof`, sponsor keys) is
 
 - Plans and verdicts come from the engines. The model does not write commands and does not decide `VERIFIED` or `FAILED`.
 - Review scenarios rebuild a fictional checkout-service conflict. They are not a customer repository.
-- A local model call is reported only after it returns. This repository's checked-in evaluation currently includes the deterministic 20-scenario run. A full direct-vs-retrieval model run was not completed on CPU; see `docs/submission/EVALUATION_KO.md`.
+- A local model call is reported only after it returns. The checked-in deterministic run is 21 scenarios (`docs/submission/results/EVAL_DETERMINISTIC.md`, generated 2026-11-22T12:43:48Z): baseline 13/21, Recovery Review 21/21. The only checked-in model sample is S01 and S10, direct and retrieval, on `qwen2.5:3b`: 0 of 4 explanations accepted. S10 direct is `fetch failed` and was not retried. The sample file's average row still counts that failure as zero tokens. The harness now leaves `error` calls out of token, latency, and cost averages, and that sample was not regenerated. There is no full 11-scenario model comparison. See `docs/submission/EVALUATION_KO.md`.
 - Demo actor tokens on `/review` are local identities, not accounts.
 
 ## Brand assets

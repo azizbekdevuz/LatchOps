@@ -116,7 +116,31 @@ describe('security regressions', () => {
     expect(review.incident.status).not.toBe('executing');
     expect(review.executions.filter((row) => row.authorized)).toHaveLength(0);
     expect(review.audit.some((event) => event.action === 'execution.failed')).toBe(true);
-  }, 60_000);
+    const retry = await executeReview(RUNNER_ACTORS.requester, incidentId);
+    expect(retry.authorized).toBe(true);
+  }, 120_000);
+
+  it('does not release the approval after commands start if saving the result fails', async () => {
+    const incidentId = await createScenarioReview(RUNNER_ACTORS.requester, 'S01');
+    await recordDecision(RUNNER_ACTORS.approver, incidentId, {
+      decision: 'approve',
+      alternativeId: 'complete_merge',
+      reason: 'Keep the production contract from the evidence',
+    });
+    await expect(
+      executeReview(RUNNER_ACTORS.requester, incidentId, {
+        beforePersist: async () => {
+          throw new Error('database write failed');
+        },
+      }),
+    ).rejects.toThrow(/database write failed/);
+    const review = await getReview(incidentId);
+    expect(review.incident.status).toBe('executing');
+    expect(review.executions.filter((row) => row.authorized)).toHaveLength(0);
+    const retry = await executeReview(RUNNER_ACTORS.requester, incidentId);
+    expect(retry.authorized).toBe(false);
+    expect(retry.reasons.join(' ')).toMatch(/already in progress/);
+  }, 120_000);
 
   it('an approval can be used only once', async () => {
     const scenario = REVIEW_SCENARIOS.find((s) => s.id === 'S01')!;

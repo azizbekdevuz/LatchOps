@@ -11,7 +11,7 @@
 - [x] 자동 push/merge 없음: 격리 저장소에 원격이 없음을 실행 전 확인, 거부 목록에 `push`/`fetch`/`remote` 등 포함
 - [x] AI 생성 명령 실행 불가: 인가 함수 입력에 모델 출력이 없음, 실행 명령은 결정적 계획에서만 나옴
 - [x] 타입 검사 통과 (`apps/web`: `npx tsc --noEmit -p .`)
-- [x] Recovery Review 단위 테스트, 20개 시나리오 E2E 테스트 통과 (결과는 `EVALUATION_KO.md` §5)
+- [x] Recovery Review 단위 테스트와 21개 시나리오 E2E. 2026-11-22 마지막 실행: `scenarios.e2e.test.ts` 31 passed, `src/lib/review` 단위 72 passed. 31개에는 명령 시작 전 재시도와, 명령 후 저장 실패 시 승인 재사용 금지가 포함됨
 - [x] web 단위·review E2E 결과는 `EVALUATION_KO.md` §5.3. 패키지·CLI 테스트와 린트는 아래 검증 기록에 명령 출력 그대로 추가
 
 ## 2. 평가·정직성
@@ -29,7 +29,7 @@
 - [x] 기존/신규 기능 구분표 `FEATURE_MATRIX_KO.md`
 - [x] 아키텍처 다이어그램 `ARCHITECTURE.md`
 - [x] README/설치 방법 (루트 `README.md`의 "Recovery Review" 절, 이 폴더의 `README.md`)
-- [x] 데모 시나리오(픽스처) 20개와 고정 모델 출력 픽스처(`fixture-responses.ts`)
+- [x] 데모 시나리오 21개와 고정 모델 출력 픽스처(`fixture-responses.ts`)
 - [x] 녹화 대본 `DEMO_SCRIPT_KO.md`
 
 ## 4. 제출자가 직접 할 일
