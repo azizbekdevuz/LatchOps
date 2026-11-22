@@ -1,4 +1,4 @@
-import { SnapshotV1Schema, type RepoSignalsV1, type SnapshotV1 } from '@latchops/schema';
+import { MAX_UNMERGED_FILES, SnapshotV1Schema, type RepoSignalsV1, type SnapshotV1 } from '@latchops/schema';
 import { discoverRepository, type RepositoryContext } from './discovery.js';
 import { collectGitOutputs } from './collectors/git-info.js';
 import { detectOperationState } from './collectors/operation-state.js';
@@ -14,7 +14,7 @@ import { collectRootCommitOid } from './collectors/root-commit.js';
 
 /** Snapshot schema caps history arrays at 30 entries. */
 const MAX_HISTORY = 30;
-const DEFAULT_MAX_CONFLICT_FILES = 5;
+const DEFAULT_MAX_CONFLICT_FILES = MAX_UNMERGED_FILES;
 
 export interface CaptureOptions {
   /** Directory to inspect. May be a nested subdirectory or a linked worktree. */
@@ -83,10 +83,13 @@ async function buildSnapshot(
     collectRootCommitOid(context),
   ]);
 
-  const unmergedFiles = extractConflicts({
+  const unmergedLimit = options.maxConflictFiles ?? DEFAULT_MAX_CONFLICT_FILES;
+  const unmergedPaths = status.unmergedPaths.slice(0, unmergedLimit);
+  const extracted = extractConflicts({
     repoRoot: context.repoRoot,
-    unmergedPaths: status.unmergedPaths.slice(0, options.maxConflictFiles ?? DEFAULT_MAX_CONFLICT_FILES),
+    unmergedPaths,
   });
+  const unmergedFiles = extracted.files;
 
   const snapshot: SnapshotV1 = {
     version: 1,
@@ -101,6 +104,8 @@ async function buildSnapshot(
     rebaseState: operations.rebase,
 
     unmergedFiles,
+    omittedUnmergedPaths: Math.max(0, status.unmergedPaths.length - unmergedPaths.length),
+    omittedConflictBlocks: extracted.omittedConflictBlocks,
     stagedFiles: status.stagedFiles,
     modifiedFiles: status.modifiedFiles,
     untrackedFiles: status.untrackedFiles,

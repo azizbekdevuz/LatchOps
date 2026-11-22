@@ -73,7 +73,8 @@ describe('authorizeExecution', () => {
     ['different alternative', { requestedAlternativeId: 'abort_merge' }],
     ['already executed', { incident: { incidentType: 'merge_conflict', requestedBy: 'minji', source: 'scenario', executed: true } }],
     ['out of scope type', { incident: { incidentType: 'detached_head', requestedBy: 'minji', source: 'scenario', executed: false } }],
-    ['capture coverage gap', { coverage: { rawUnmerged: 7, captured: 5 } }],
+    ['capture coverage gap', { coverage: { rawUnmerged: 21, captured: 20 } }],
+    ['omitted conflict blocks', { coverage: { rawUnmerged: 1, captured: 1, omittedConflictBlocks: 2 } }],
     ['imported snapshot', { incident: { incidentType: 'merge_conflict', requestedBy: 'minji', source: 'cli_import', executed: false } }],
   ];
 

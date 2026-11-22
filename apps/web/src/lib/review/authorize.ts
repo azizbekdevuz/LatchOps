@@ -45,7 +45,7 @@ export interface AuthorizationInput {
   /** Hash of the state re-captured from the isolated workspace right before execution. */
   currentEvidenceHash: string | null;
   /** From the approved evidence; a gap means the plan does not cover every unmerged path. */
-  coverage: { rawUnmerged: number; captured: number };
+  coverage: { rawUnmerged: number; captured: number; omittedConflictBlocks?: number };
   decisions: DecisionLike[];
   requestedAlternativeId: string;
   now: Date;
@@ -109,9 +109,10 @@ export function authorizeExecution(input: AuthorizationInput): AuthorizationResu
     deny('repository state changed since approval (stale evidence)');
   }
 
-  if (input.coverage.rawUnmerged > input.coverage.captured) {
+  const omittedBlocks = input.coverage.omittedConflictBlocks ?? 0;
+  if (input.coverage.rawUnmerged > input.coverage.captured || omittedBlocks > 0) {
     deny(
-      `plan covers ${input.coverage.captured} of ${input.coverage.rawUnmerged} unmerged paths (capture limit); resolve manually`,
+      `conflict evidence incomplete: plan covers ${input.coverage.captured} of ${input.coverage.rawUnmerged} unmerged paths, ${omittedBlocks} conflict block(s) omitted; resolve manually`,
     );
   }
 

@@ -48,8 +48,8 @@ export interface EvidenceSnapshot {
   items: EvidenceItem[];
   truncated: boolean;
   truncationNotes: string[];
-  /** Unmerged entries in raw `git status` vs paths the engine captured. */
-  coverage: { rawUnmerged: number; captured: number };
+  /** Unmerged entries in raw `git status` vs paths stored, plus blocks dropped by the per-file cap. */
+  coverage: { rawUnmerged: number; captured: number; omittedConflictBlocks: number };
 }
 
 export const KnowledgeChunkSchema = z.object({

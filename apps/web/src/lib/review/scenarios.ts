@@ -266,12 +266,12 @@ export const REVIEW_SCENARIOS: ReviewScenario[] = [
   },
   {
     id: 'S11',
-    title: 'Seven conflicted files (beyond capture limit)',
-    description: 'The existing snapshot capture keeps at most 5 unmerged files, so the deterministic plan would stage only 5 of 7 and "git commit" would fail. Recovery Review compares raw git status with the captured paths, reports the gap, and blocks execution.',
+    title: 'Seven conflicted files',
+    description: 'Seven config files conflict in one merge. Capture stores up to 20 unmerged paths, so the plan and the evidence cover every file and the merge can be completed.',
     category: 'repository',
     repo: multiFileRepo(7),
     selectedAlternativeId: 'complete_merge',
-    expected: { verdict: 'BLOCKED', conflicted: 5, evidenceTruncated: true },
+    expected: { verdict: 'VERIFIED', conflicted: 7 },
   },
   {
     id: 'S12',
@@ -368,6 +368,15 @@ export const REVIEW_SCENARIOS: ReviewScenario[] = [
     },
     selectedAlternativeId: 'complete_merge',
     expected: { verdict: 'VERIFIED', conflicted: 1 },
+  },
+  {
+    id: 'S21',
+    title: 'Twenty-one conflicted files (beyond capture ceiling)',
+    description: 'Twenty-one config files conflict. Capture stores 20 and reports the missing path. The plan cannot cover the merge, so execution is blocked instead of committing a partial resolution.',
+    category: 'repository',
+    repo: multiFileRepo(21),
+    selectedAlternativeId: 'complete_merge',
+    expected: { verdict: 'BLOCKED', conflicted: 20, evidenceTruncated: true },
   },
 ];
 

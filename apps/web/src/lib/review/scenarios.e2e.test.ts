@@ -47,7 +47,7 @@ describe('Recovery Review scenarios (git + SQLite, fixture model)', () => {
       if (scenario.control === 'no_consent') expect(outcome.explanationBlocked).toMatch(/consent/i);
       if (scenario.control === 'bad_llm') expect(outcome.adversarialRejected).toBe(outcome.adversarialTotal);
       if (scenario.control === 'viewer' || scenario.control === 'self_approval') expect(outcome.decisionRefused).not.toBeNull();
-      if (scenario.id === 'S11') expect(outcome.authReasons.join(' ')).toMatch(/covers 5 of 7 unmerged paths/);
+      if (scenario.id === 'S21') expect(outcome.authReasons.join(' ')).toMatch(/covers 20 of 21 unmerged paths/);
       if (scenario.id === 'S04') expect(outcome.authReasons.join(' ')).toMatch(/conflict markers remain/);
     }, 120_000);
   }

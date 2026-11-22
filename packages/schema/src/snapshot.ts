@@ -11,13 +11,17 @@ export const ConflictBlockSchema = z.object({
 
 export type ConflictBlock = z.infer<typeof ConflictBlockSchema>;
 
+/** Safety ceiling for conflict capture. More than this is reported and must not be executed. */
+export const MAX_UNMERGED_FILES = 20;
+export const MAX_CONFLICT_BLOCKS = 8;
+
 // Unmerged file with conflict details
 export const UnmergedFileSchema = z.object({
   path: z.string(),
   stageOurs: z.string().optional(), // mode info
   stageTheirs: z.string().optional(),
   stageBase: z.string().optional(),
-  conflictBlocks: z.array(ConflictBlockSchema).max(3), // up to 3 blocks
+  conflictBlocks: z.array(ConflictBlockSchema).max(MAX_CONFLICT_BLOCKS),
 });
 
 export type UnmergedFile = z.infer<typeof UnmergedFileSchema>;
@@ -92,7 +96,11 @@ export const SnapshotV1Schema = z.object({
   rebaseState: RebaseStateSchema,
 
   // Working tree status
-  unmergedFiles: z.array(UnmergedFileSchema).max(5), // increased for better conflict exploration
+  unmergedFiles: z.array(UnmergedFileSchema).max(MAX_UNMERGED_FILES),
+  /** Unmerged paths present in git status but not stored, because of the capture ceiling. */
+  omittedUnmergedPaths: z.number().int().nonnegative().optional(),
+  /** Conflict blocks present in captured files but not stored, because of the per-file ceiling. */
+  omittedConflictBlocks: z.number().int().nonnegative().optional(),
   stagedFiles: z.array(z.string()),
   modifiedFiles: z.array(z.string()),
   untrackedFiles: z.array(z.string()),

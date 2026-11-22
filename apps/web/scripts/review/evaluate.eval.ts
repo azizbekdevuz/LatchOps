@@ -35,6 +35,7 @@ const PRICE_OUT = Number(process.env.REVIEW_PRICE_OUTPUT_PER_M ?? '0.60');
 const DEFAULT_LLM_SCENARIOS = ['S01', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', 'S20'];
 const LLM_SCENARIOS = process.env.REVIEW_EVAL_SCENARIOS?.split(',').map((s) => s.trim()).filter(Boolean) ?? DEFAULT_LLM_SCENARIOS;
 const RUN_DETERMINISTIC = process.env.REVIEW_EVAL_SKIP_DETERMINISTIC !== '1';
+const RUN_BASELINE_LLM = process.env.REVIEW_EVAL_SKIP_BASELINE_LLM !== '1';
 
 /** Controls where no valid human approval exists at execution time. */
 const INVALID_APPROVAL = new Set(['reject', 'viewer', 'self_approval', 'expired', 'stale', 'tamper']);
@@ -222,7 +223,8 @@ it.runIf(RUN_LLM)(`LLM evaluation: direct vs RAG vs baseline prompt (${MODEL})`,
       });
     }
 
-    // Baseline: the existing explanation prompt and evidence shape, same model.
+    if (!RUN_BASELINE_LLM) continue;
+    // Baseline: the pre-review explanation prompt and evidence shape, same model.
     const base = await runBaseline(scenario);
     const baseCall = await ollamaChat({
       baseUrl: OLLAMA_URL,
@@ -298,19 +300,44 @@ it.runIf(RUN_LLM)(`LLM evaluation: direct vs RAG vs baseline prompt (${MODEL})`,
   };
   const injection = calls.filter((x) => x.scenarioId === 'S06');
 
-  const summary = { generatedAt: new Date().toISOString(), model: MODEL, warmupMs, priceAssumption: { inputPerM: PRICE_IN, outputPerM: PRICE_OUT }, direct, rag, baseline: base };
-  write(`eval-llm-${MODEL.replace(/[^a-z0-9.]+/gi, '_')}.json`, JSON.stringify({ summary, calls, baselineCalls }, null, 2));
+  const partial = LLM_SCENARIOS.join(',') !== DEFAULT_LLM_SCENARIOS.join(',');
+  const stem = `${MODEL.replace(/[^a-z0-9.]+/gi, '_')}${partial ? `-sample-${LLM_SCENARIOS.join('_')}` : ''}`;
+  const summary = {
+    generatedAt: new Date().toISOString(),
+    model: MODEL,
+    scenarios: LLM_SCENARIOS,
+    partial,
+    baselineLlm: RUN_BASELINE_LLM,
+    warmupMs,
+    priceAssumption: { inputPerM: PRICE_IN, outputPerM: PRICE_OUT },
+    direct,
+    rag,
+    baseline: RUN_BASELINE_LLM ? base : null,
+  };
+  write(`eval-llm-${stem}.json`, JSON.stringify({ summary, calls, baselineCalls }, null, 2));
 
   const row = (label: string, d: string, r: string) => `| ${label} | ${d} | ${r} |`;
   const perCall = calls
     .map((x) => `| ${x.scenarioId} | ${x.mode} | ${x.status} | ${x.unsupportedKeyClaims}/${x.keyClaims} | ${x.forbidden.length} | ${x.promptTokens ?? '-'} | ${x.outputTokens ?? '-'} | ${x.latencyMs ?? '-'} | ${(x.rejectionReasons[0] ?? x.schemaErrors[0] ?? '').replace(/\|/g, '/').slice(0, 70)} |`)
     .join('\n');
+  const baselineSection = RUN_BASELINE_LLM
+    ? [
+        '## Baseline explanation prompt (pre-review prompt, same model)',
+        '',
+        `- Parsed into the pre-review explanation shape: ${base.parsed}/${base.calls}`,
+        '- Citations per claim: none (that contract has no citation field), so no claim is checkable against specific evidence.',
+        `- Concrete entities (paths, KEY=VALUE, numbers, refs) not found anywhere in the evidence: ${base.ungrounded}/${base.entities} (${pct(base.ungrounded, base.entities)})`,
+        `- Outputs containing policy violations (commands/outcome claims): ${base.withForbidden}/${base.calls}`,
+        `- Median latency: ${base.medianLatencyMs} ms; mean prompt tokens: ${base.meanPromptTokens}`,
+      ]
+    : ['## Baseline explanation prompt', '', 'Not run (`REVIEW_EVAL_SKIP_BASELINE_LLM=1`). This file compares direct context and RAG only.'];
   write(
-    `EVAL_LLM_${MODEL.replace(/[^a-z0-9.]+/gi, '_')}.md`,
+    `EVAL_LLM_${stem}.md`,
     [
       `# LLM evaluation (generated) — ${MODEL} via local Ollama`,
       '',
-      `Generated: ${summary.generatedAt}. Command: \`REVIEW_EVAL_LLM=1 REVIEW_OLLAMA_MODEL=${MODEL} pnpm --filter @latchops/web review:eval\`.`,
+      partial ? 'Partial sample. This is not the 11-scenario set and must not be reported as one.' : 'Full scenario list for this harness.',
+      `Generated: ${summary.generatedAt}. Command: \`REVIEW_EVAL_LLM=1 REVIEW_OLLAMA_MODEL=${MODEL}${partial ? ` REVIEW_EVAL_SCENARIOS=${LLM_SCENARIOS.join(',')}` : ''}${RUN_BASELINE_LLM ? '' : ' REVIEW_EVAL_SKIP_BASELINE_LLM=1'} pnpm --filter @latchops/web review:eval\`.`,
       `Scenarios: ${LLM_SCENARIOS.join(', ')} (one call per scenario and mode, temperature 0, seed 7). Model warm-up before measuring: ${warmupMs} ms.`,
       '',
       '| Metric | Direct context injection | RAG (pinned + BM25) |',
@@ -328,13 +355,7 @@ it.runIf(RUN_LLM)(`LLM evaluation: direct vs RAG vs baseline prompt (${MODEL})`,
       row('Local API cost', '$0 (local model)', '$0 (local model)'),
       row(`Hypothetical hosted cost for all calls @ $${PRICE_IN}/M in, $${PRICE_OUT}/M out (assumed price)`, `$${direct.hypotheticalCostUsd.toFixed(5)}`, `$${rag.hypotheticalCostUsd.toFixed(5)}`),
       '',
-      '## Baseline explanation prompt (existing Nosana prompt, same model)',
-      '',
-      `- Parsed into the existing explanation shape: ${base.parsed}/${base.calls}`,
-      `- Citations per claim: none (the existing contract has no citation field), so no claim is checkable against specific evidence.`,
-      `- Concrete entities (paths, KEY=VALUE, numbers, refs) not found anywhere in the evidence: ${base.ungrounded}/${base.entities} (${pct(base.ungrounded, base.entities)})`,
-      `- Outputs containing policy violations (commands/outcome claims): ${base.withForbidden}/${base.calls}`,
-      `- Median latency: ${base.medianLatencyMs} ms; mean prompt tokens: ${base.meanPromptTokens}`,
+      ...baselineSection,
       '',
       '## Prompt-injection scenario (S06)',
       '',

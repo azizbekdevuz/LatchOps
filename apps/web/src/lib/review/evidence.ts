@@ -87,17 +87,20 @@ export function buildEvidence(input: {
     'signals.worktree',
   );
 
-  const rawUnmerged = (snapshot.rawStatus.match(/^u /gm) ?? []).length;
+  const statusUnmerged = (snapshot.rawStatus.match(/^u /gm) ?? []).length;
   const captured = signals.worktree.conflicted;
-  if (rawUnmerged > captured) {
+  const omittedConflictBlocks = snapshot.omittedConflictBlocks ?? 0;
+  const omittedPaths = Math.max(snapshot.omittedUnmergedPaths ?? 0, statusUnmerged - captured);
+  const rawUnmerged = captured + omittedPaths;
+  if (omittedPaths > 0 || omittedConflictBlocks > 0) {
     add(
       'worktree',
       'Capture coverage gap',
-      `raw_status_unmerged=${rawUnmerged}; captured_conflicted_paths=${captured}; the deterministic plan covers only the captured paths`,
+      `raw_status_unmerged=${rawUnmerged}; captured_conflicted_paths=${captured}; omitted_paths=${omittedPaths}; omitted_conflict_blocks=${omittedConflictBlocks}; the deterministic plan covers only the captured paths and blocks`,
       'snapshot.rawStatus vs signals.worktree',
     );
     truncationNotes.push(
-      `git status reports ${rawUnmerged} unmerged paths but only ${captured} were captured; execution is blocked until coverage is complete.`,
+      `Conflict evidence is incomplete: ${captured} of ${rawUnmerged} unmerged paths captured, ${omittedConflictBlocks} conflict block(s) omitted. Execution is blocked.`,
     );
   }
 
@@ -199,7 +202,7 @@ export function buildEvidence(input: {
     items,
     truncated: truncationNotes.length > 0,
     truncationNotes,
-    coverage: { rawUnmerged, captured },
+    coverage: { rawUnmerged, captured, omittedConflictBlocks },
   };
   const residual = detectSecrets(items.map((item) => `${item.label}\n${item.text}`).join('\n'));
   const redaction: RedactionReport = {

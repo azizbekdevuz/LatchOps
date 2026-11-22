@@ -1,8 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { ConflictBlock, UnmergedFile } from '@latchops/schema';
+import { MAX_CONFLICT_BLOCKS, type ConflictBlock, type UnmergedFile } from '@latchops/schema';
 
-const MAX_BLOCKS_PER_FILE = 3;
+const MAX_BLOCKS_PER_FILE = MAX_CONFLICT_BLOCKS;
+/** Scan past the stored cap so omitted blocks can be counted. A hit here means "at least one more". */
+const MAX_BLOCKS_SCAN = 40;
 const CONTEXT_LINES = 10;
 const MAX_BLOCK_SIZE = 2_000; // characters
 
@@ -19,29 +21,36 @@ export interface ExtractConflictsOptions {
  * line endings. Unicode paths are handled by resolving the path with `resolve`
  * and reading with the default utf8 decoder.
  */
-export function extractConflicts(options: ExtractConflictsOptions): UnmergedFile[] {
-  const results: UnmergedFile[] = [];
+export interface ConflictExtraction {
+  files: UnmergedFile[];
+  omittedConflictBlocks: number;
+}
+
+export function extractConflicts(options: ExtractConflictsOptions): ConflictExtraction {
+  const files: UnmergedFile[] = [];
+  let omittedConflictBlocks = 0;
 
   for (const filePath of options.unmergedPaths) {
     const fullPath = resolve(options.repoRoot, filePath);
 
     if (!existsSync(fullPath)) {
-      results.push({ path: filePath, conflictBlocks: [] });
+      files.push({ path: filePath, conflictBlocks: [] });
       continue;
     }
 
     try {
       const content = readFileSync(fullPath, 'utf8').replace(/\r\n?/g, '\n');
-      results.push({
-        path: filePath,
-        conflictBlocks: extractConflictBlocks(content).slice(0, MAX_BLOCKS_PER_FILE),
-      });
+      const found = extractConflictBlocks(content);
+      const kept = found.slice(0, MAX_BLOCKS_PER_FILE);
+      omittedConflictBlocks += found.length - kept.length;
+      if (found.length >= MAX_BLOCKS_SCAN) omittedConflictBlocks += 1;
+      files.push({ path: filePath, conflictBlocks: kept });
     } catch {
-      results.push({ path: filePath, conflictBlocks: [] });
+      files.push({ path: filePath, conflictBlocks: [] });
     }
   }
 
-  return results;
+  return { files, omittedConflictBlocks };
 }
 
 export function extractConflictBlocks(content: string): ConflictBlock[] {
@@ -49,7 +58,7 @@ export function extractConflictBlocks(content: string): ConflictBlock[] {
   const blocks: ConflictBlock[] = [];
 
   let i = 0;
-  while (i < lines.length && blocks.length < MAX_BLOCKS_PER_FILE) {
+  while (i < lines.length && blocks.length < MAX_BLOCKS_SCAN) {
     if (lines[i].startsWith('<<<<<<<')) {
       const startLine = i;
       let separatorLine = -1;

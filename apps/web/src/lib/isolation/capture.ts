@@ -1,6 +1,6 @@
-import { SnapshotV1Schema, type SnapshotV1 } from '@latchops/schema';
+import { MAX_UNMERGED_FILES, SnapshotV1Schema, type SnapshotV1 } from '@latchops/schema';
 import {
-  extractConflictBlocks,
+  extractConflicts,
   LOG_FORMAT,
   parseDiffStat,
   parseLog,
@@ -60,18 +60,8 @@ export async function captureSnapshotFromWorkspace(ws: GitWorkspace): Promise<Sn
     }
   }
 
-  const unmergedFiles = [];
-  for (const path of status.unmergedPaths.slice(0, 5)) {
-    try {
-      const content = (await ws.readFile(path)).replace(/\r\n?/g, '\n');
-      unmergedFiles.push({
-        path,
-        conflictBlocks: extractConflictBlocks(content).slice(0, 3),
-      });
-    } catch {
-      unmergedFiles.push({ path, conflictBlocks: [] });
-    }
-  }
+  const unmergedPaths = status.unmergedPaths.slice(0, MAX_UNMERGED_FILES);
+  const extracted = extractConflicts({ repoRoot: ws.repoRoot, unmergedPaths });
 
   const platform = toPlatform();
   const gitDir = `${ws.repoRoot.replace(/\\/g, '/')}/.git`;
@@ -87,7 +77,9 @@ export async function captureSnapshotFromWorkspace(ws: GitWorkspace): Promise<Sn
     rebaseState: rebaseHead
       ? { inProgress: true, type: 'merge' }
       : { inProgress: false, type: 'none' },
-    unmergedFiles,
+    unmergedFiles: extracted.files,
+    omittedUnmergedPaths: Math.max(0, status.unmergedPaths.length - unmergedPaths.length),
+    omittedConflictBlocks: extracted.omittedConflictBlocks,
     stagedFiles: status.stagedFiles,
     modifiedFiles: status.modifiedFiles,
     untrackedFiles: status.untrackedFiles,
