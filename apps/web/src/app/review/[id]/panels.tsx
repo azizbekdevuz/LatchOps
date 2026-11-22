@@ -26,9 +26,9 @@ import { verdictClass } from '../shared';
 
 type Call = (path: string, body: unknown) => Promise<void>;
 
-function Panel({ title, icon, aside, children }: { title: string; icon: ReactNode; aside?: ReactNode; children: ReactNode }) {
+function Panel({ id, title, icon, aside, children }: { id?: string; title: string; icon: ReactNode; aside?: ReactNode; children: ReactNode }) {
   return (
-    <section className="card space-y-4">
+    <section id={id} className="card space-y-4 scroll-mt-24">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-text-primary flex items-center gap-2">
           {icon}
@@ -75,6 +75,7 @@ export function EvidencePanel({ detail, highlight }: { detail: ReviewDetail; hig
   const { evidence, redaction, evidenceHash, planHash } = detail.snapshot;
   return (
     <Panel
+      id="evidence"
       title="Evidence snapshot"
       icon={<FileSearch className="w-4 h-4 text-accent-blue" />}
       aside={<span className="badge badge-blue font-mono">{evidence.items.length} items</span>}
@@ -165,6 +166,7 @@ export function ExplanationPanel({
 
   return (
     <Panel
+      id="explanation"
       title="Grounded explanation"
       icon={<Sparkles className="w-4 h-4 text-accent-purple" />}
       aside={
@@ -416,7 +418,7 @@ export function DecisionPanel({ detail, actor, onCall }: { detail: ReviewDetail;
     run(decision, () => onCall('decision', { decision, alternativeId, reason, explanationId: accepted?.id }));
 
   return (
-    <Panel title="Human decision" icon={<CheckCircle2 className="w-4 h-4 text-accent-blue" />}>
+    <Panel id="decision" title="Human decision" icon={<CheckCircle2 className="w-4 h-4 text-accent-blue" />}>
       {latest && (
         <div className={`rounded-lg border p-3 text-xs ${latest.decision === 'approve' ? 'border-accent-green/40' : 'border-accent-red/40'}`}>
           <p className="text-text-primary font-medium">
@@ -490,6 +492,7 @@ export function ExecutionPanel({ detail, actor, onCall }: { detail: ReviewDetail
 
   return (
     <Panel
+      id="run"
       title="Isolated recovery run"
       icon={<Terminal className="w-4 h-4 text-accent-yellow" />}
       aside={<span className="text-[11px] text-text-muted">temporary repository · no remotes · never pushes</span>}

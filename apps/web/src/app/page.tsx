@@ -119,6 +119,9 @@ export default function LandingPage() {
                     See the workflow
                   </a>
                 </div>
+                <p className="mt-3 text-xs text-text-muted max-w-xl">
+                  Review a merge needs no account and stays on this machine. Open incident room is the signed-in history.
+                </p>
               </Reveal>
             </div>
 

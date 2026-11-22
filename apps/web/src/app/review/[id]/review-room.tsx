@@ -8,10 +8,10 @@ import { ActorSwitcher, api, statusClass, useActorToken, useReviewMeta } from '.
 import { AuditPanel, DecisionPanel, EvidencePanel, ExecutionPanel, ExplanationPanel, PlanPanel } from './panels';
 
 const STEPS = [
-  { key: 'evidence', label: 'Evidence' },
-  { key: 'explanation', label: 'Explanation' },
-  { key: 'decision', label: 'Decision' },
-  { key: 'run', label: 'Isolated run' },
+  { key: 'evidence', label: 'Evidence', target: 'evidence' },
+  { key: 'explanation', label: 'Explanation', target: 'explanation' },
+  { key: 'decision', label: 'Decision', target: 'decision' },
+  { key: 'run', label: 'Isolated run', target: 'run' },
 ] as const;
 
 function progress(detail: ReviewDetail): Record<(typeof STEPS)[number]['key'], 'done' | 'current' | 'todo' | 'blocked'> {
@@ -106,9 +106,15 @@ export function ReviewRoom({ id }: { id: string }) {
                             ? 'border-accent-yellow/60 text-accent-yellow'
                             : 'border-border-color text-text-muted';
                     return (
-                      <li key={step.key} className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-mono ${style}`}>
-                        <span>{String(index + 1).padStart(2, '0')}</span>
-                        {step.label}
+                      <li key={step.key}>
+                        <button
+                          type="button"
+                          className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-mono ${style}`}
+                          onClick={() => document.getElementById(step.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                        >
+                          <span>{String(index + 1).padStart(2, '0')}</span>
+                          {step.label}
+                        </button>
                       </li>
                     );
                   })}

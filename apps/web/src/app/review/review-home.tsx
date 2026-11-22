@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ArrowRight, Cpu, FileJson, FlaskConical, Loader2, ShieldAlert, ShieldCheck } from 'lucide-react';
-import { ActorSwitcher, api, statusClass, useActorToken, useReviewMeta, verdictClass } from './shared';
+import { ActorSwitcher, api, statusClass, useActorToken, useReviewMeta } from './shared';
 
 const FLOW = [
   { n: '01', title: 'Evidence', text: 'Deterministic snapshot, numbered items, secrets redacted, hashed.' },
@@ -96,14 +96,38 @@ export function ReviewHome() {
           </div>
         )}
 
+        <section className="card !p-5 border-accent-green/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1 max-w-2xl">
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent-green">Start here</p>
+            <h2 className="text-lg font-semibold text-text-primary">Checkout deploy.env conflict</h2>
+            <p className="text-sm text-text-secondary">
+              Opens as Minji, the requester. Switch to Jun before approving. The merge runs only after Jun approves one plan alternative, and only inside a throwaway repository.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary shrink-0"
+            disabled={!canCreate || busy !== null}
+            onClick={() => create({ scenarioId: 'S01' }, 'S01')}
+          >
+            {busy === 'S01' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+            Open this conflict
+          </button>
+        </section>
+        {busy && (
+          <p className="text-sm text-text-secondary flex items-center gap-2" role="status">
+            <Loader2 className="w-4 h-4 animate-spin text-accent-green" /> Building a temporary conflicted repository…
+          </p>
+        )}
+
         <section className="space-y-4">
           <div className="flex items-end justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold text-text-primary flex items-center gap-2">
-                <FlaskConical className="w-5 h-5 text-accent-blue" /> Reproducible scenarios
+                <FlaskConical className="w-5 h-5 text-accent-blue" /> Other scenarios
               </h2>
               <p className="text-xs text-text-secondary mt-1">
-                Each scenario rebuilds a real conflicted Git repository in a temporary directory with fixed commit dates.
+                Each one rebuilds a real conflicted Git repository. The fixture target is the outcome the automated check expects, not a result you have already earned.
               </p>
             </div>
             {!canCreate && meta && <span className="text-xs text-accent-yellow">Switch to a requester or approver to open a review.</span>}
@@ -207,12 +231,14 @@ function ScenarioGrid({
         >
           <div className="flex items-center justify-between gap-2">
             <span className="font-mono text-xs text-accent-green">{s.id}</span>
-            <span className={`badge ${verdictClass(s.expectedVerdict)} !text-[10px]`}>expected {s.expectedVerdict}</span>
           </div>
           <h4 className="text-sm font-semibold text-text-primary mt-2">{s.title}</h4>
           <p className="text-xs text-text-secondary mt-1 line-clamp-3">{s.description}</p>
           <div className="flex items-center justify-between mt-3 text-[11px] text-text-muted font-mono">
-            <span>reviewer picks {s.selectedAlternativeId}</span>
+            <span>
+              picks {s.selectedAlternativeId}
+              <span className="text-text-muted"> · fixture target {s.expectedVerdict}</span>
+            </span>
             {busy === s.id ? (
               <Loader2 className="w-4 h-4 animate-spin text-accent-green" />
             ) : (
