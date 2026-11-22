@@ -4,10 +4,10 @@ import { dirname, join, resolve, sep } from 'node:path';
 import type { RecoveryPlanV1, RepoSignalsV1, SnapshotV1, VerificationResultV1 } from '@latchops/schema';
 import { generateRecoveryPlan, verifyRecovery } from '@latchops/recovery-engine';
 import { computeRepoSignals, runGit } from '@latchops/state-engine';
-import { captureSnapshotFromWorkspace } from '@/lib/hacksprint/capture';
-import { decideVerdict } from '@/lib/hacksprint/verdict';
-import type { ExecEvidence } from '@/lib/hacksprint/types';
-import { isolatedGitEnv, toEvidence, type ProofWorkspace } from '@/lib/hacksprint/workspace';
+import { captureSnapshotFromWorkspace } from '@/lib/isolation/capture';
+import type { ExecEvidence, GitWorkspace } from '@/lib/isolation/types';
+import { decideVerdict } from '@/lib/isolation/verdict';
+import { isolatedGitEnv, toEvidence } from '@/lib/isolation/workspace';
 import type { AuthorizationResult } from './authorize';
 import type { RepoSpec } from './scenarios';
 import type { ExecutionVerdict } from './types';
@@ -18,7 +18,7 @@ const FIXED_DATE = '2026-01-05T09:00:00+0900';
  * Temporary repository outside the LatchOps checkout. Commit dates are fixed
  * so rebuilding the same scenario yields the same object ids and evidence hash.
  */
-export function createReviewWorkspace(): ProofWorkspace {
+export function createReviewWorkspace(): GitWorkspace {
   const dir = mkdtempSync(join(tmpdir(), 'latchops-review-'));
   const env = { ...isolatedGitEnv(), GIT_AUTHOR_DATE: FIXED_DATE, GIT_COMMITTER_DATE: FIXED_DATE };
   const inside = (relPath: string) => {
@@ -65,7 +65,7 @@ export function createReviewWorkspace(): ProofWorkspace {
   };
 }
 
-async function applyFiles(ws: ProofWorkspace, files: Record<string, string | null>): Promise<void> {
+async function applyFiles(ws: GitWorkspace, files: Record<string, string | null>): Promise<void> {
   for (const [path, content] of Object.entries(files)) {
     if (content === null) await ws.execGit(['rm', '-q', '--', path], { source: 'setup' });
     else await ws.writeFile(path, content);
@@ -73,7 +73,7 @@ async function applyFiles(ws: ProofWorkspace, files: Record<string, string | nul
 }
 
 /** Rebuild the scenario's conflicted merge from scratch in `ws`. */
-export async function materializeRepo(ws: ProofWorkspace, spec: RepoSpec, opts: { drift?: boolean } = {}): Promise<void> {
+export async function materializeRepo(ws: GitWorkspace, spec: RepoSpec, opts: { drift?: boolean } = {}): Promise<void> {
   const git = (args: string[], allowFail = false) => ws.execGit(args, { allowFail, source: 'setup' });
   await git(['init', '-q', '-b', 'main']);
   await git(['config', 'user.name', 'LatchOps Review Fixture']);
@@ -118,7 +118,7 @@ export interface CapturedState {
   plan: RecoveryPlanV1;
 }
 
-export async function captureState(ws: ProofWorkspace): Promise<CapturedState> {
+export async function captureState(ws: GitWorkspace): Promise<CapturedState> {
   const snapshot = await captureSnapshotFromWorkspace(ws);
   const signals = computeRepoSignals(snapshot);
   const plan = generateRecoveryPlan({ snapshot, signals });
@@ -142,7 +142,7 @@ export interface IsolatedRunResult {
  * non-command action is writing the human resolution fixture.
  */
 export async function executeAuthorized(input: {
-  ws: ProofWorkspace;
+  ws: GitWorkspace;
   plan: RecoveryPlanV1;
   alternativeId: string;
   auth: AuthorizationResult;

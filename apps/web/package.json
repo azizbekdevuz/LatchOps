@@ -22,7 +22,6 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.4",
-    "@daytona/sdk": "^0.214.0",
     "@latchops/schema": "workspace:*",
     "@latchops/state-engine": "workspace:*",
     "@latchops/recovery-engine": "workspace:*",

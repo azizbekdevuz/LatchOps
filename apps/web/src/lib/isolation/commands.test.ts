@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { git } from '@latchops/recovery-engine';
-import { isExecutablePlanCommand } from './execute';
-import { isAllowedScenarioId, resolveScenario } from './scenario';
+import { isExecutablePlanCommand } from './commands';
 
 describe('allowlisted recovery commands', () => {
   it('allows the concrete inspect and recovery shapes used by the demo', () => {
@@ -51,22 +50,5 @@ describe('allowlisted recovery commands', () => {
         readOnly: false,
       }),
     ).toBe(false);
-  });
-});
-
-describe('scenario guard', () => {
-  it('only accepts the built-in merge-conflict demo', () => {
-    expect(isAllowedScenarioId('merge_conflict_demo')).toBe(true);
-    expect(isAllowedScenarioId('other')).toBe(false);
-    expect(resolveScenario(undefined).id).toBe('merge_conflict_demo');
-    expect(() => resolveScenario('evil')).toThrow(/Unsupported/);
-    const scenario = resolveScenario('merge_conflict_demo');
-    expect(scenario.title).toContain('Checkout service');
-    expect(scenario.releaseBranch).toBe('release/checkout-api');
-    expect(scenario.resolvedEnv).toBe(scenario.mainEnv);
-    expect(scenario.readme).toContain('PORT=8443');
-    expect(scenario.resolvedEnv).toContain('PORT=8443');
-    expect(scenario.resolvedEnv).toContain('HEALTHCHECK_PATH=/healthz');
-    expect(scenario.releaseEnv).toContain('PORT=8080');
   });
 });

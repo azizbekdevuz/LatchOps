@@ -1,6 +1,38 @@
 import type { RecoveryPlanV1, RepoSignalsV1, VerificationResultV1 } from '@latchops/schema';
-import { boundText } from './quote';
-import type { BrokenEvidence, ExecEvidence, NosanaExplanation } from './types';
+import { boundText } from '@/lib/isolation/text';
+import type { ExecEvidence } from '@/lib/isolation/types';
+
+/**
+ * Evidence shape used by the pre-review explanation path.
+ * Kept so the evaluation baseline measures that path, not the new cited schema.
+ * The scrub rules are the old ones on purpose, including their gaps.
+ */
+
+export interface ConflictEvidence {
+  path: string;
+  ours: string;
+  theirs: string;
+  resolved?: string;
+}
+
+export interface BrokenEvidence {
+  incidentType: string;
+  branch: string | null;
+  oid: string | null;
+  mergeActive: boolean;
+  conflictedPaths: string[];
+  reasons: string[];
+  rawStatus: string;
+  conflict: ConflictEvidence | null;
+}
+
+export interface LegacyExplanation {
+  whatWasBroken: string;
+  whatWasAttempted: string;
+  checksPassed: string[];
+  checksFailed: string[];
+  whyItMatters: string;
+}
 
 const SECRET_RE =
   /(api[_-]?key|authorization|bearer|token|secret|password|daytona|nosana)[=:]\s*\S+/gi;
@@ -8,7 +40,6 @@ const PATH_RE = /([A-Za-z]:\\|\/(?:Users|home|tmp|var|private)\/)\S+/g;
 const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 
 const MAX_EVIDENCE_CHARS = 6_000;
-const MAX_FIELD = 400;
 
 export interface RedactedEvidence {
   incidentType: string;
@@ -33,29 +64,7 @@ export function scrub(value: string): string {
     .replace(EMAIL_RE, '[email]');
 }
 
-export function publicRepoLabel(): string {
-  return '/demo/checkout-service';
-}
-
-export function redactBroken(broken: BrokenEvidence): BrokenEvidence {
-  return {
-    ...broken,
-    rawStatus: boundText(scrub(broken.rawStatus), 1_200),
-    reasons: broken.reasons.map((reason) => scrub(reason)),
-    conflict: broken.conflict
-      ? {
-          path: broken.conflict.path,
-          ours: boundText(broken.conflict.ours, MAX_FIELD),
-          theirs: boundText(broken.conflict.theirs, MAX_FIELD),
-          resolved: broken.conflict.resolved
-            ? boundText(broken.conflict.resolved, MAX_FIELD)
-            : undefined,
-        }
-      : null,
-  };
-}
-
-export function buildNosanaEvidence(input: {
+export function buildLegacyExplanationEvidence(input: {
   plan: RecoveryPlanV1;
   before: RepoSignalsV1;
   after: RepoSignalsV1 | null;
@@ -109,7 +118,7 @@ export function buildNosanaEvidence(input: {
   };
 }
 
-export function parseNosanaExplanation(raw: unknown): NosanaExplanation | null {
+export function parseLegacyExplanation(raw: unknown): LegacyExplanation | null {
   if (!raw || typeof raw !== 'object') return null;
   const value = raw as Record<string, unknown>;
   const whatWasBroken = asBoundedString(value.whatWasBroken);

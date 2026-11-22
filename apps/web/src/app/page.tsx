@@ -101,10 +101,10 @@ export default function LandingPage() {
               <Reveal delay={240}>
                 <div className="mt-9 flex flex-wrap items-center gap-4">
                   <Link
-                    href="/hacksprint"
+                    href="/review"
                     className="btn btn-primary px-7 py-3 text-base no-underline hover:no-underline"
                   >
-                    Recovery proof
+                    Review a merge
                   </Link>
                   <Link
                     href="/auth/signup"

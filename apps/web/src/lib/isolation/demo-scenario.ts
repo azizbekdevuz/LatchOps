@@ -1,6 +1,7 @@
-import { DEMO_SCENARIO_ID, type DemoScenarioId } from './types';
+import { SnapshotV1Schema, type SnapshotV1 } from '@latchops/schema';
 
-export const HACKSPRINT_SCENARIO_IDS = [DEMO_SCENARIO_ID] as const;
+/** Label used by the frozen fixture. It is not a path on this machine. */
+export const DEMO_REPO_ROOT = '/demo/checkout-service';
 
 export const PRODUCTION_DEPLOY_CONTRACT = [
   'ENVIRONMENT=production',
@@ -15,7 +16,7 @@ export const PRODUCTION_DEPLOY_CONTRACT = [
 ].join('\n');
 
 export interface DemoScenario {
-  id: DemoScenarioId;
+  id: 'merge_conflict_demo';
   title: string;
   description: string;
   conflictPath: string;
@@ -32,11 +33,11 @@ export interface DemoScenario {
 }
 
 /**
- * Built-in merge-conflict demo. Contents are fixed so the live path never
- * depends on an arbitrary external repository.
+ * Fixed merge-conflict incident. Contents never come from an arbitrary repository.
+ * Recovery Review scenario S01 rebuilds this same conflict with real Git.
  */
 export const MERGE_CONFLICT_DEMO: DemoScenario = {
-  id: DEMO_SCENARIO_ID,
+  id: 'merge_conflict_demo',
   title: 'Checkout service — release blocked by deployment configuration conflict.',
   description:
     'A fictional engineering team is merging release/checkout-api into main before deploying its checkout API. Both branches independently changed deploy.env. Git stopped with MERGE_HEAD and one unmerged path.',
@@ -95,13 +96,46 @@ export const MERGE_CONFLICT_DEMO: DemoScenario = {
   mainMessage: 'main: lock production checkout-api deploy contract',
 };
 
-export function resolveScenario(id: unknown): DemoScenario {
-  if (id === undefined || id === null || id === DEMO_SCENARIO_ID) {
-    return MERGE_CONFLICT_DEMO;
-  }
-  throw new Error(`Unsupported demo scenario: ${String(id)}`);
-}
+const MAIN_OID = '1111111111111111111111111111111111111111';
+const MERGE_HEAD = '2222222222222222222222222222222222222222';
 
-export function isAllowedScenarioId(id: unknown): id is DemoScenarioId {
-  return id === undefined || id === null || id === DEMO_SCENARIO_ID;
+/**
+ * Frozen SnapshotV1 for unit tests. Engines still classify and plan it.
+ * It is not a live capture.
+ */
+export function builtInBrokenSnapshot(): SnapshotV1 {
+  const scenario = MERGE_CONFLICT_DEMO;
+  return SnapshotV1Schema.parse({
+    version: 1,
+    timestamp: '2026-09-19T00:00:00.000Z',
+    platform: 'linux',
+    repoRoot: DEMO_REPO_ROOT,
+    gitDir: `${DEMO_REPO_ROOT}/.git`,
+    branch: { head: 'main', oid: MAIN_OID },
+    isDetachedHead: false,
+    rebaseState: { inProgress: false, type: 'none' },
+    unmergedFiles: [
+      {
+        path: scenario.conflictPath,
+        conflictBlocks: [
+          {
+            startLine: 1,
+            endLine: 16,
+            oursContent: scenario.mainEnv.trim(),
+            theirsContent: scenario.releaseEnv.trim(),
+            context: scenario.conflictPath,
+          },
+        ],
+      },
+    ],
+    stagedFiles: [],
+    modifiedFiles: [],
+    untrackedFiles: [],
+    recentLog: [{ hash: MAIN_OID.slice(0, 7), refs: ['HEAD', 'main'], message: scenario.mainMessage }],
+    recentReflog: [],
+    mergeHead: MERGE_HEAD,
+    mergeMessage: `Merge branch '${scenario.releaseBranch}'`,
+    rawStatus: `# branch.oid ${MAIN_OID}\n# branch.head main\nu ${scenario.conflictPath}`,
+    rawBranches: `* main\n  ${scenario.releaseBranch}`,
+  });
 }

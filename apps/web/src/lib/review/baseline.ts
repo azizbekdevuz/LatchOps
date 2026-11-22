@@ -1,8 +1,7 @@
 import { verifyRecovery } from '@latchops/recovery-engine';
-import { isExecutablePlanCommand } from '@/lib/hacksprint/execute';
-import { buildNosanaEvidence } from '@/lib/hacksprint/redaction';
-import { decideVerdict } from '@/lib/hacksprint/verdict';
-import type { BrokenEvidence } from '@/lib/hacksprint/types';
+import { isExecutablePlanCommand } from '@/lib/isolation/commands';
+import { decideVerdict } from '@/lib/isolation/verdict';
+import { buildLegacyExplanationEvidence, type BrokenEvidence } from './legacy-evidence';
 import { captureState, createReviewWorkspace, materializeRepo } from './isolated';
 import type { ReviewScenario } from './scenarios';
 
@@ -12,7 +11,7 @@ import type { ReviewScenario } from './scenarios';
  * - executes immediately after planning (no consent, approval or roles),
  * - structural allowlist only (isExecutablePlanCommand), no marker guard,
  *   no coverage check, no stale-state check,
- * - model evidence built by the existing buildNosanaEvidence().
+   * - model evidence built by the pre-review explanation evidence builder.
  */
 export async function runBaseline(scenario: ReviewScenario) {
   const ws = createReviewWorkspace();
@@ -31,7 +30,7 @@ export async function runBaseline(scenario: ReviewScenario) {
       rawStatus: snapshot.rawStatus,
       conflict: block ? { path: file.path, ours: block.oursContent, theirs: block.theirsContent } : null,
     };
-    const nosanaEvidence = buildNosanaEvidence({
+    const legacyEvidence = buildLegacyExplanationEvidence({
       plan,
       before: signals,
       after: null,
@@ -75,7 +74,7 @@ export async function runBaseline(scenario: ReviewScenario) {
       });
     }
     const decision = decideVerdict({ verification, executionFailed: failed, executionError: error });
-    return { verdict: decision.verdict, reasons: decision.reasons, commandsRun, nosanaEvidence, signals, plan, snapshot };
+    return { verdict: decision.verdict, reasons: decision.reasons, commandsRun, legacyEvidence, signals, plan, snapshot };
   } finally {
     await ws.dispose();
   }

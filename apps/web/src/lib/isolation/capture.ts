@@ -9,7 +9,7 @@ import {
   REFLOG_FORMAT,
   toBranchInfo,
 } from '@latchops/state-engine';
-import type { ProofWorkspace } from './workspace';
+import type { GitWorkspace } from './types';
 
 const HISTORY = 20;
 
@@ -18,14 +18,14 @@ function normalizeStatus(raw: string): string {
   return raw.replace(/\r?\n/g, '\0');
 }
 
-async function revParse(ws: ProofWorkspace, ref: string): Promise<string | null> {
+async function revParse(ws: GitWorkspace, ref: string): Promise<string | null> {
   const result = await ws.execGit(['rev-parse', '-q', '--verify', ref], { allowFail: true });
   if (result.exitCode !== 0) return null;
   const value = result.stdout.trim();
   return value || null;
 }
 
-export async function captureSnapshotFromWorkspace(ws: ProofWorkspace): Promise<SnapshotV1> {
+export async function captureSnapshotFromWorkspace(ws: GitWorkspace): Promise<SnapshotV1> {
   const statusRaw = (
     await ws.execGit(['status', '--porcelain=v2', '--branch', '-z'], { allowFail: true })
   ).stdout;
@@ -73,7 +73,7 @@ export async function captureSnapshotFromWorkspace(ws: ProofWorkspace): Promise<
     }
   }
 
-  const platform = ws.kind === 'daytona' ? 'linux' : toPlatform();
+  const platform = toPlatform();
   const gitDir = `${ws.repoRoot.replace(/\\/g, '/')}/.git`;
 
   const snapshot: SnapshotV1 = {

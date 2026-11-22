@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { generateRecoveryPlan } from '@latchops/recovery-engine';
 import { computeRepoSignals } from '@latchops/state-engine';
 import type { RecoveryPlanV1 } from '@latchops/schema';
-import { builtInBrokenSnapshot } from '@/lib/hacksprint/preview-fixture';
+import { builtInBrokenSnapshot } from '@/lib/isolation/demo-scenario';
 import { APPROVAL_TTL_MS, authorizeExecution, canApprove, isDeniedCommand, type AuthorizationInput, type DecisionLike } from './authorize';
 import { planFingerprint } from './evidence';
 import type { ReviewActor } from './types';

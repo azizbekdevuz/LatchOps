@@ -1,4 +1,4 @@
-import { MERGE_CONFLICT_DEMO, PRODUCTION_DEPLOY_CONTRACT } from '@/lib/hacksprint/scenario';
+import { MERGE_CONFLICT_DEMO, PRODUCTION_DEPLOY_CONTRACT } from '@/lib/isolation/demo-scenario';
 import type { ExecutionVerdict } from './types';
 
 /** Files per side. `null` deletes the file on that side. */
@@ -99,7 +99,7 @@ export const REVIEW_SCENARIOS: ReviewScenario[] = [
   {
     id: 'S01',
     title: 'Checkout deploy.env conflict — complete merge',
-    description: 'The existing HackSprint incident: main locks the production deploy contract, the release branch retunes the same keys. Reviewer completes the merge keeping the production contract.',
+    description: 'The checkout demo: main locks the production deploy contract, the release branch retunes the same keys. Reviewer completes the merge keeping the production contract.',
     category: 'repository',
     repo: checkoutRepo,
     selectedAlternativeId: 'complete_merge',

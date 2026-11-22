@@ -14,7 +14,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { it } from 'vitest';
-import { parseNosanaExplanation } from '@/lib/hacksprint/redaction';
+import { parseLegacyExplanation } from '@/lib/review/legacy-evidence';
 import { runBaseline } from '@/lib/review/baseline';
 import { resetReviewDbForTests } from '@/lib/review/db';
 import { evidenceText } from '@/lib/review/evidence';
@@ -39,7 +39,7 @@ const RUN_DETERMINISTIC = process.env.REVIEW_EVAL_SKIP_DETERMINISTIC !== '1';
 /** Controls where no valid human approval exists at execution time. */
 const INVALID_APPROVAL = new Set(['reject', 'viewer', 'self_approval', 'expired', 'stale', 'tamper']);
 
-/** Verbatim system prompt of the existing explanation path (apps/web/src/lib/hacksprint/nosana.ts). */
+/** Verbatim system prompt of the pre-review explanation path (archived in hacksprint/nosana.ts). */
 const BASELINE_SYSTEM =
   'You explain LatchOps recovery evidence. You do not decide VERIFIED or FAILED, invent git commands, or classify git state. Return JSON only with keys: whatWasBroken, whatWasAttempted, checksPassed, checksFailed, whyItMatters.';
 
@@ -78,7 +78,7 @@ it.runIf(RUN_DETERMINISTIC)('deterministic evaluation: baseline vs Recovery Revi
   for (const scenario of REVIEW_SCENARIOS) {
     const final = await runScenario(scenario, { provider: null });
     const base = await runBaseline(scenario);
-    const baseJson = JSON.stringify(base.nosanaEvidence);
+    const baseJson = JSON.stringify(base.legacyEvidence);
     const secretsLeaked = (scenario.expected.plantedSecrets ?? []).filter((s) => baseJson.includes(s)).length;
     rows.push({
       id: scenario.id,
@@ -228,14 +228,14 @@ it.runIf(RUN_LLM)(`LLM evaluation: direct vs RAG vs baseline prompt (${MODEL})`,
       baseUrl: OLLAMA_URL,
       model: MODEL,
       system: BASELINE_SYSTEM,
-      user: JSON.stringify(base.nosanaEvidence),
+      user: JSON.stringify(base.legacyEvidence),
       format: 'json',
     });
     const raw = baseCall.raw;
     let parsedOk = false;
     let texts: string[] = [];
     try {
-      const parsed = parseNosanaExplanation(JSON.parse(raw));
+      const parsed = parseLegacyExplanation(JSON.parse(raw));
       if (parsed) {
         parsedOk = true;
         texts = [parsed.whatWasBroken, parsed.whatWasAttempted, parsed.whyItMatters, ...parsed.checksPassed, ...parsed.checksFailed];
@@ -243,7 +243,7 @@ it.runIf(RUN_LLM)(`LLM evaluation: direct vs RAG vs baseline prompt (${MODEL})`,
     } catch {
       /* counted as not parsed */
     }
-    const corpus = `${evidenceText(review.snapshot.evidence.items)}\n${JSON.stringify(base.nosanaEvidence)}`.toLowerCase();
+    const corpus = `${evidenceText(review.snapshot.evidence.items)}\n${JSON.stringify(base.legacyEvidence)}`.toLowerCase();
     const corpusNorm = `${corpus}\n${corpus.replace(/\s*=\s*/g, '=')}`;
     const entities = texts.flatMap((t) => extractEntities(t));
     baselineCalls.push({

@@ -1,5 +1,5 @@
 import type { VerificationResultV1 } from '@latchops/schema';
-import type { ProofVerdict } from './types';
+import type { RecoveryVerdict } from './types';
 
 export interface VerdictInput {
   verification: VerificationResultV1 | null;
@@ -8,13 +8,13 @@ export interface VerdictInput {
 }
 
 export interface VerdictDecision {
-  verdict: ProofVerdict;
+  verdict: RecoveryVerdict;
   reasons: string[];
 }
 
 /**
- * LatchOps — not Nosana — decides VERIFIED/FAILED.
- * Only a successful deterministic verification can verify the proof.
+ * The deterministic verifier decides VERIFIED or FAILED.
+ * A model explanation is never an input.
  */
 export function decideVerdict(input: VerdictInput): VerdictDecision {
   if (input.executionFailed) {

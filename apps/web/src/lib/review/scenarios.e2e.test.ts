@@ -9,7 +9,7 @@ import { fixtureProvider } from './llm';
 import { RUNNER_ACTORS, runScenario } from './scenario-runner';
 import { REVIEW_SCENARIOS } from './scenarios';
 import { createScenarioReview, executeReview, getReview, importCliSnapshot, ReviewError } from './service';
-import { builtInBrokenSnapshot } from '@/lib/hacksprint/preview-fixture';
+import { builtInBrokenSnapshot } from '@/lib/isolation/demo-scenario';
 
 let dir: string;
 

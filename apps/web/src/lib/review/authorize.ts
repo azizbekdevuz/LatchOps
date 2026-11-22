@@ -1,5 +1,5 @@
 import type { RecoveryCommandV1, RecoveryPlanV1 } from '@latchops/schema';
-import { isExecutablePlanCommand } from '@/lib/hacksprint/execute';
+import { isExecutablePlanCommand } from '@/lib/isolation/commands';
 import { planFingerprint } from './evidence';
 import { REVIEW_INCIDENT_TYPE, type ActorRole, type ReviewActor } from './types';
 

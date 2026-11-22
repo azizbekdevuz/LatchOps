@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RecoveryPlanV1Schema, type RepoSignalsV1 } from '@latchops/schema';
-import { buildNosanaEvidence, parseNosanaExplanation, scrub } from './redaction';
-import type { BrokenEvidence, ExecEvidence } from './types';
+import type { ExecEvidence } from '@/lib/isolation/types';
+import { buildLegacyExplanationEvidence, parseLegacyExplanation, scrub, type BrokenEvidence } from './legacy-evidence';
 
 const signals: RepoSignalsV1 = {
   version: 1,
@@ -94,7 +94,7 @@ describe('redaction', () => {
       },
     ];
 
-    const evidence = buildNosanaEvidence({
+    const evidence = buildLegacyExplanationEvidence({
       plan,
       before: signals,
       after: { ...signals, state: 'clean', worktree: { ...signals.worktree, conflicted: 0, isDirty: false } },
@@ -124,7 +124,7 @@ describe('redaction', () => {
 
   it('parses a valid Nosana explanation and rejects garbage', () => {
     expect(
-      parseNosanaExplanation({
+      parseLegacyExplanation({
         whatWasBroken: 'merge conflict on deploy.env',
         whatWasAttempted: 'complete the merge',
         checksPassed: ['MERGE_HEAD gone'],
@@ -132,6 +132,6 @@ describe('redaction', () => {
         whyItMatters: 'safe to continue',
       }),
     ).toMatchObject({ whatWasBroken: 'merge conflict on deploy.env' });
-    expect(parseNosanaExplanation({ hello: 'world' })).toBeNull();
+    expect(parseLegacyExplanation({ hello: 'world' })).toBeNull();
   });
 });

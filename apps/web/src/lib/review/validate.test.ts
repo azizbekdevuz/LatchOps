@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateRecoveryPlan } from '@latchops/recovery-engine';
 import { computeRepoSignals } from '@latchops/state-engine';
-import { builtInBrokenSnapshot } from '@/lib/hacksprint/preview-fixture';
+import { builtInBrokenSnapshot } from '@/lib/isolation/demo-scenario';
 import { buildEvidence } from './evidence';
 import { adversarialResponses, groundedResponse } from './fixture-responses';
 import { KNOWLEDGE_BASE } from './knowledge';
