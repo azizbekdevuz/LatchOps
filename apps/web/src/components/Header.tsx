@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import { Home, History, LogOut, User, Menu, X, ShieldCheck } from 'lucide-react';
+import { Home, History, LogOut, User, Menu, X, ShieldCheck, ClipboardCheck } from 'lucide-react';
 import { useState } from 'react';
 
 function LatchMark() {
@@ -65,6 +65,16 @@ export function Header() {
             >
               <ShieldCheck className="w-4 h-4" />
               Proof
+            </Link>
+            <Link
+              href="/review"
+              data-active={pathname?.startsWith('/review')}
+              className={`nav-link flex items-center gap-2 py-1 text-sm font-medium no-underline hover:no-underline transition-colors ${
+                pathname?.startsWith('/review') ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              <ClipboardCheck className="w-4 h-4" />
+              Review
             </Link>
             {isAuthenticated ? (
               <>
@@ -171,6 +181,16 @@ export function Header() {
               >
                 <ShieldCheck className="w-5 h-5" />
                 Proof
+              </Link>
+              <Link
+                href="/review"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg no-underline ${
+                  pathname?.startsWith('/review') ? 'bg-bg-tertiary text-text-primary' : 'text-text-secondary'
+                }`}
+              >
+                <ClipboardCheck className="w-5 h-5" />
+                Review
               </Link>
               {isAuthenticated ? (
                 <>

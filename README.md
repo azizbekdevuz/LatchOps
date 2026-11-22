@@ -90,6 +90,32 @@ pnpm cli send --open   # with pnpm dev:web
 
 ---
 
+## Recovery Review (local, human-approved)
+
+`/review` adds a review step in front of recovery for one incident type (`merge_conflict`). Everything runs on this machine: Next.js on `127.0.0.1`, a local Ollama model, and a SQLite file.
+
+**Evidence → grounded explanation → explicit approval → isolated run**
+
+1. **Evidence**: the existing engines capture the snapshot and plan. Recovery Review turns them into numbered items (`E1..En`), redacts secrets, re-scans the result, and hashes it.
+2. **Explanation** (optional, only with consent bound to that evidence hash): a local model must cite `E#`/`K#` for every claim. A fail-closed validator hides the whole explanation if any key claim is unsupported, or if it contains commands or outcome claims.
+3. **Approval**: a second person (`approver`, not the requester) approves one engine-generated alternative with a written reason. The approval lasts 30 minutes and can be used once.
+4. **Isolated run**: the server rebuilds the incident in a throwaway repository and re-hashes the state. A deterministic gate (`authorize.ts`) must pass before only the approved plan commands run. The verdict comes from `verifyRecovery`. Nothing is pushed or merged, and no model text is ever executed.
+
+```bash
+pnpm install
+pnpm review:setup          # build engines + generate the review Prisma client
+ollama pull qwen2.5:3b     # optional: explanations need a local Ollama
+pnpm review:dev            # http://127.0.0.1:3000/review
+pnpm review:test           # unit + end-to-end scenario tests (no model needed)
+pnpm review:eval           # baseline vs final on 20 scenarios -> docs/submission/results/
+# REVIEW_EVAL_LLM=1 pnpm review:eval   # + direct vs RAG with the local model (slow on CPU)
+```
+
+Imported CLI snapshots (`pnpm cli snapshot --output snap.json`) are review-only: nothing runs against your repository.
+Submission documents (Korean): [`docs/submission/`](./docs/submission/README.md).
+
+---
+
 ## Honesty
 
 - Analysis is rule-based. There is no LLM in the recovery path.

@@ -18,7 +18,11 @@
     "db:push": "pnpm --filter @latchops/web db:push",
     "db:studio": "pnpm --filter @latchops/web db:studio",
     "cli": "pnpm --filter @latchops/cli --",
-    "migrate:phase4": "pnpm --filter @latchops/web run migrate:phase4"
+    "migrate:phase4": "pnpm --filter @latchops/web run migrate:phase4",
+    "review:setup": "pnpm --filter @latchops/schema build && pnpm --filter @latchops/state-engine build && pnpm --filter @latchops/recovery-engine build && pnpm --filter @latchops/web run review:setup",
+    "review:test": "pnpm --filter @latchops/web exec vitest run src/lib/review && pnpm --filter @latchops/web run test:review-e2e",
+    "review:eval": "pnpm --filter @latchops/web run review:eval",
+    "review:dev": "pnpm --filter @latchops/web run dev:review"
   },
   "devDependencies": {
     "@eslint/js": "^9",

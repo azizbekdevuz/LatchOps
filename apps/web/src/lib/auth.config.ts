@@ -53,9 +53,11 @@ export const authConfig: NextAuthConfig = {
       const pathname = nextUrl.pathname;
 
       // Allow public routes
-      const isPublicRoute = publicRoutes.some(
-        (route) => pathname === route || pathname.startsWith('/api/auth')
-      );
+      // /review is the local-only Recovery Review; its API enforces localhost + actor tokens.
+      const isPublicRoute =
+        publicRoutes.some((route) => pathname === route || pathname.startsWith('/api/auth')) ||
+        pathname === '/review' ||
+        pathname.startsWith('/review/');
 
       if (isPublicRoute) {
         return true;

@@ -1,0 +1,145 @@
+// LatchOps Recovery Review — local-only persistence.
+//
+// Separate from schema.prisma (Postgres, multi-tenant product). This schema is
+// SQLite so the review workflow runs on one machine with no external services.
+// JSON payloads are stored as TEXT (canonical JSON) because hashes are computed
+// over the exact stored string.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/review-client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("REVIEW_DATABASE_URL")
+}
+
+model ReviewIncident {
+  id           String   @id
+  createdAt    DateTime @default(now())
+  source       String // scenario | cli_import
+  scenarioId   String?
+  title        String
+  incidentType String
+  requestedBy  String
+  status       String   @default("evidence_ready") // evidence_ready | explained | approved | rejected | executed
+
+  snapshots    EvidenceSnapshotRecord[]
+  consents     ConsentRecord[]
+  explanations ExplanationRecord[]
+  decisions    DecisionRecord[]
+  executions   ExecutionRecord[]
+  audit        ReviewAuditEvent[]
+}
+
+model EvidenceSnapshotRecord {
+  id              String   @id
+  incidentId      String
+  createdAt       DateTime @default(now())
+  evidenceHash    String
+  planHash        String
+  evidenceJson    String
+  planJson        String
+  signalsJson     String
+  redactionJson   String
+  truncated       Boolean  @default(false)
+
+  incident ReviewIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId])
+}
+
+model ConsentRecord {
+  id           String    @id
+  incidentId   String
+  snapshotId   String
+  evidenceHash String
+  actorId      String
+  provider     String
+  scope        String // redacted_evidence_only
+  grantedAt    DateTime  @default(now())
+  revokedAt    DateTime?
+
+  incident ReviewIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId])
+}
+
+model ExplanationRecord {
+  id              String   @id
+  incidentId      String
+  snapshotId      String
+  evidenceHash    String
+  createdAt       DateTime @default(now())
+  mode            String // direct | rag
+  provider        String
+  model           String
+  status          String // accepted | rejected | error
+  outputJson      String?
+  /// Model text exactly as returned, re-redacted; kept so rejected outputs stay auditable.
+  rawOutput       String?
+  validationJson  String
+  retrievedIds    String // JSON array
+  promptTokens    Int?
+  outputTokens    Int?
+  latencyMs       Int?
+  errorMessage    String?
+
+  incident ReviewIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId])
+}
+
+model DecisionRecord {
+  id                    String   @id
+  incidentId            String
+  snapshotId            String
+  evidenceHash          String
+  planHash              String
+  decision              String // approve | reject
+  selectedAlternativeId String?
+  actorId               String
+  actorRole             String
+  reason                String
+  explanationId         String?
+  createdAt             DateTime @default(now())
+  expiresAt             DateTime
+
+  incident ReviewIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId])
+}
+
+model ExecutionRecord {
+  id            String   @id
+  incidentId    String
+  decisionId    String?
+  actorId       String
+  createdAt     DateTime @default(now())
+  authorized    Boolean
+  authJson      String
+  verdict       String? // VERIFIED | FAILED | BLOCKED
+  resultJson    String?
+
+  incident ReviewIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId])
+}
+
+// Append-only. Each row hashes its payload together with the previous row's
+// hash so edits or deletions are detectable by verifyAuditChain().
+model ReviewAuditEvent {
+  seq        Int      @id @default(autoincrement())
+  incidentId String
+  at         DateTime @default(now())
+  actorId    String
+  action     String
+  payload    String
+  prevHash   String
+  hash       String
+
+  incident ReviewIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId])
+}

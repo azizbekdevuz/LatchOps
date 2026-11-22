@@ -11,7 +11,7 @@ export default defineConfig({
     // Scope tests to pure library units. Route/component tests that require the
     // Next.js runtime are out of scope for the Phase 1 interim guard.
     include: ['src/lib/**/*.test.ts'],
-    exclude: ['**/*.integration.test.ts'],
+    exclude: ['**/*.integration.test.ts', '**/*.e2e.test.ts'],
     environment: 'node',
   },
 });
